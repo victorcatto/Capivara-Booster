@@ -1,0 +1,88 @@
+<UserControl x:Class="CapivaraBooster.Views.CleanerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CapivaraBooster.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:CleanerViewModel}"
+             d:DesignHeight="700" d:DesignWidth="900">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="30,25,30,30">
+            <!-- Header -->
+            <TextBlock Text="{Binding Loc[Cleaner_Title]}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock Text="{Binding Loc[Cleaner_Subtitle]}"
+                       FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,20" />
+
+            <!-- Summary Banner -->
+            <Border Background="{StaticResource CardBgBrush}" BorderBrush="{StaticResource CyberCardBorderGradient}" BorderThickness="1.5"
+                    CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Loc[Cleaner_TotalFound_Label]}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding FormattedTotalFound}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource PrimaryAccentBrush}" Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="{Binding Loc[Cleaner_Scan_Button]}" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ScanCommand}" Margin="0,0,10,0" Padding="14,10" FontSize="13" />
+                        <Button Content="{Binding Loc[Cleaner_FlushDns_Button]}" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding FlushDnsCommand}" Margin="0,0,10,0" Padding="14,10" FontSize="13" />
+                        <Button Content="{Binding Loc[Cleaner_Purge_Button]}" Style="{StaticResource PrimaryCyberButtonStyle}"
+                                Command="{Binding CleanCommand}" Padding="20,10" FontSize="13" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Selection controls -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding Loc[Cleaner_Targets_Header]}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="{Binding Loc[Cleaner_SelectAll]}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding SelectAllCommand}" Margin="0,0,8,0" Padding="10,5" FontSize="12" />
+                    <Button Content="{Binding Loc[Cleaner_DeselectAll]}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding DeselectAllCommand}" Padding="10,5" FontSize="12" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Cleaner Items List -->
+            <ItemsControl ItemsSource="{Binding CleanerItems}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#12141F" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                CornerRadius="6" Padding="16,12" Margin="0,4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,14,0" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding TargetPath, StringFormat='Target: {0}'}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0" />
+                                </StackPanel>
+
+                                <Border Grid.Column="2" Background="#1D2235" CornerRadius="4" Padding="10,5" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FormattedSize}" FontWeight="Bold" FontSize="12" Foreground="{StaticResource PrimaryAccentBrush}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

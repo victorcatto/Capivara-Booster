@@ -1,0 +1,44 @@
+## Visual Studio & .NET Build Artifacts
+[Bb]in/
+[Oo]bj/
+[Dd]ist/
+[Bb]uild/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+## Visual Studio Code (preserve tasks.json)
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+
+## Crash Dumps & Memory Caches
+*.dmp
+*.crash
+*.stackdump
+
+## Sensitive Environment, Credentials & Local Vaults
+.env
+.env.*
+auth_config.json
+session.dat
+users_vault.dat
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+
+## Windows System & OS Artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Installer Temporary Outputs
+Output/
+_ISCC_tmp/

@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "releaseDate": "2026-11-22",
+  "title": "Capivara Booster v1.0.0 - Official Launch",
+  "changelog": "- Cyberpunk dark UI with official Capivara emblem\n- Full bilingual i18n support (PT-BR and EN-US)\n- Windows Debloater & Privacy Engine (UWP apps & telemetry)\n- Cache, Prefetch & GPU Shader Purger\n- HPET Low-Latency Tuning & Ultimate Performance Power Plan\n- Esports Optimizations for CS2, Valorant, and LoL\n- User Authentication with Domain Allowlist (@gmail.com, @outlook.com, @yahoo.com.br, @yahoo.com)\n- Single Master Administrator Rule (victorcatto93@gmail.com)\n- Automated In-App Self-Updater connected to GitHub Releases",
+  "installerUrl": "https://github.com/victorcatto93/Capivara-Booster/releases/download/v1.0.0/CapivaraBooster-Setup-v1.0.0.exe",
+  "sha256": "",
+  "mandatory": false
+}

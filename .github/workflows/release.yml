@@ -1,0 +1,92 @@
+name: Build & Release Capivara Booster
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to release (e.g. 1.0.1)'
+        required: true
+        default: '1.0.1'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Determine Version
+        id: get_version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $ver = "${{ github.event.inputs.version }}".TrimStart('v','V')
+          } else {
+            $ver = "${{ github.ref_name }}".TrimStart('v','V')
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_ENV
+          echo "Tag: v$ver"
+
+      - name: Restore Dependencies
+        run: dotnet restore CapivaraBooster.sln
+
+      - name: Publish .NET 8 Executable
+        run: |
+          dotnet publish src/CapivaraBooster/CapivaraBooster.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -p:Version=${{ env.VERSION }} `
+            -o ./publish/app
+
+      - name: Build Inno Setup Installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=${{ env.VERSION }} installer/CapivaraBooster.iss
+
+      - name: Compute Checksum & Update Manifest
+        shell: pwsh
+        run: |
+          $installerPath = Get-ChildItem -Path "./publish/installer" -Filter "*.exe" | Select-Object -First 1 -ExpandProperty FullName
+          $hash = (Get-FileHash -Path $installerPath -Algorithm SHA256).Hash
+          echo "SHA256: $hash"
+          echo "INSTALLER_HASH=$hash" >> $env:GITHUB_ENV
+          echo "INSTALLER_PATH=$installerPath" >> $env:GITHUB_ENV
+
+          # Update version.json
+          $manifest = Get-Content -Raw version.json | ConvertFrom-Json
+          $manifest.version = "${{ env.VERSION }}"
+          $manifest.releaseDate = (Get-Date).ToString("yyyy-MM-dd")
+          $manifest.sha256 = $hash
+          $manifest.installerUrl = "https://github.com/victorcatto93/Capivara-Booster/releases/download/v${{ env.VERSION }}/CapivaraBooster-Setup-v${{ env.VERSION }}.exe"
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content version.json
+
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: "Capivara Booster v${{ env.VERSION }}"
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.INSTALLER_PATH }}
+            version.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

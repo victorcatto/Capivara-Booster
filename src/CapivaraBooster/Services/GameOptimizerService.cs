@@ -77,38 +77,54 @@ public class GameOptimizerService : IGameOptimizerService
         {
             steamPath = _registryService.GetString(RegistryHive.LocalMachine, @"SOFTWARE\Valve\Steam", "InstallPath");
         }
+        if (string.IsNullOrEmpty(steamPath))
+        {
+            steamPath = _registryService.GetString(RegistryHive.LocalMachine, @"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath");
+        }
 
         var candidateLibraries = new List<string>();
-        if (!string.IsNullOrEmpty(steamPath) && Directory.Exists(steamPath))
+        if (!string.IsNullOrEmpty(steamPath))
         {
-            candidateLibraries.Add(steamPath);
-
-            string vdfPath = Path.Combine(steamPath, "steamapps", "libraryfolders.vdf");
-            if (File.Exists(vdfPath))
+            steamPath = steamPath.Replace('/', '\\');
+            if (Directory.Exists(steamPath))
             {
-                try
+                candidateLibraries.Add(Path.GetFullPath(steamPath));
+
+                string vdfPath = Path.Combine(steamPath, "steamapps", "libraryfolders.vdf");
+                if (File.Exists(vdfPath))
                 {
-                    string content = File.ReadAllText(vdfPath);
-                    var matches = Regex.Matches(content, @"""path""\s+""([^""]+)""", RegexOptions.IgnoreCase);
-                    foreach (Match m in matches)
+                    try
                     {
-                        string p = m.Groups[1].Value.Replace(@"\\", @"\");
-                        if (Directory.Exists(p) && !candidateLibraries.Contains(p, StringComparer.OrdinalIgnoreCase))
+                        string content = File.ReadAllText(vdfPath);
+                        var matches = Regex.Matches(content, @"""path""\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                        foreach (Match m in matches)
                         {
-                            candidateLibraries.Add(p);
+                            string rawPath = m.Groups[1].Value.Replace(@"\\", @"\").Replace('/', '\\');
+                            if (Directory.Exists(rawPath))
+                            {
+                                string full = Path.GetFullPath(rawPath);
+                                if (!candidateLibraries.Contains(full, StringComparer.OrdinalIgnoreCase))
+                                {
+                                    candidateLibraries.Add(full);
+                                }
+                            }
                         }
                     }
+                    catch { }
                 }
-                catch { }
             }
         }
 
-        string[] standardPaths = { @"C:\Program Files (x86)\Steam", @"D:\SteamLibrary", @"E:\SteamLibrary", @"F:\SteamLibrary" };
+        string[] standardPaths = { @"C:\Program Files (x86)\Steam", @"D:\SteamLibrary", @"E:\SteamLibrary", @"F:\SteamLibrary", @"G:\SteamLibrary" };
         foreach (var p in standardPaths)
         {
-            if (Directory.Exists(p) && !candidateLibraries.Contains(p, StringComparer.OrdinalIgnoreCase))
+            if (Directory.Exists(p))
             {
-                candidateLibraries.Add(p);
+                string full = Path.GetFullPath(p);
+                if (!candidateLibraries.Contains(full, StringComparer.OrdinalIgnoreCase))
+                {
+                    candidateLibraries.Add(full);
+                }
             }
         }
 
@@ -441,7 +457,10 @@ public class GameOptimizerService : IGameOptimizerService
             LogMessage?.Invoke("[Valorant] Adding Windows Defender exclusions for Riot Vanguard and Valorant...");
 
             string vanguardPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Riot Vanguard");
-            string riotGamesDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(valorantExePath) ?? @"C:\Riot Games\VALORANT", @"..\..\..\..\"));
+            string? valDir = Path.GetDirectoryName(valorantExePath);
+            string riotGamesDir = !string.IsNullOrEmpty(valDir)
+                ? Path.GetFullPath(Path.Combine(valDir, @"..\..\..\..\"))
+                : @"C:\Riot Games";
 
             string psScript = $@"
 Add-MpPreference -ExclusionPath '{vanguardPath}' -ErrorAction SilentlyContinue
@@ -480,22 +499,24 @@ Add-MpPreference -ExclusionProcess 'RiotClientServices.exe' -ErrorAction Silentl
             if (enableLowSpecAndCloseClient)
             {
                 string configDir = Path.Combine(lolRootDir, "Config");
-                if (Directory.Exists(configDir))
+                if (!Directory.Exists(configDir))
                 {
-                    string gameCfg = Path.Combine(configDir, "game.cfg");
-                    string persistedSettings = Path.Combine(configDir, "PersistedSettings.json");
+                    Directory.CreateDirectory(configDir);
+                }
 
-                    if (File.Exists(gameCfg))
-                    {
-                        await _restoreService.BackupFileAsync(gameCfg, "LoL", "Original LoL game.cfg");
-                        PatchGameCfg(gameCfg);
-                    }
+                string gameCfg = Path.Combine(configDir, "game.cfg");
+                string persistedSettings = Path.Combine(configDir, "PersistedSettings.json");
 
-                    if (File.Exists(persistedSettings))
-                    {
-                        await _restoreService.BackupFileAsync(persistedSettings, "LoL", "Original LoL PersistedSettings.json");
-                        PatchPersistedSettingsJson(persistedSettings);
-                    }
+                if (File.Exists(gameCfg))
+                {
+                    await _restoreService.BackupFileAsync(gameCfg, "LoL", "Original LoL game.cfg");
+                }
+                PatchGameCfg(gameCfg);
+
+                if (File.Exists(persistedSettings))
+                {
+                    await _restoreService.BackupFileAsync(persistedSettings, "LoL", "Original LoL PersistedSettings.json");
+                    PatchPersistedSettingsJson(persistedSettings);
                 }
             }
 
@@ -546,8 +567,9 @@ Add-MpPreference -ExclusionProcess 'LeagueClientUx.exe' -ErrorAction SilentlyCon
     {
         try
         {
-            var lines = File.ReadAllLines(path).ToList();
+            var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
             bool inGeneral = false;
+            bool foundGeneral = false;
             bool foundLowSpec = false;
             bool foundCloseClient = false;
             bool foundVsync = false;
@@ -558,6 +580,7 @@ Add-MpPreference -ExclusionProcess 'LeagueClientUx.exe' -ErrorAction SilentlyCon
                 if (line.StartsWith("[General]", StringComparison.OrdinalIgnoreCase))
                 {
                     inGeneral = true;
+                    foundGeneral = true;
                     continue;
                 }
                 else if (line.StartsWith("[") && line.EndsWith("]"))
@@ -597,8 +620,15 @@ Add-MpPreference -ExclusionProcess 'LeagueClientUx.exe' -ErrorAction SilentlyCon
                 if (!foundCloseClient) lines.Add("CloseClient=1");
                 if (!foundVsync) lines.Add("WaitForVerticalSync=0");
             }
+            else if (!foundGeneral)
+            {
+                lines.Add("[General]");
+                lines.Add("LowSpecMode=1");
+                lines.Add("CloseClient=1");
+                lines.Add("WaitForVerticalSync=0");
+            }
 
-            File.WriteAllLines(path, lines);
+            File.WriteAllLines(path, lines, Encoding.UTF8);
             LogMessage?.Invoke("[LoL] Successfully configured Low Spec Mode and Close Client in game.cfg.");
         }
         catch (Exception ex)
@@ -619,23 +649,43 @@ Add-MpPreference -ExclusionProcess 'LeagueClientUx.exe' -ErrorAction SilentlyCon
                 {
                     if (fileElem is JsonObject fileObj && fileObj.TryGetPropertyValue("sections", out var sectionsNode) && sectionsNode is JsonArray sectionsArray)
                     {
+                        bool generalFound = false;
                         foreach (var secElem in sectionsArray)
                         {
                             if (secElem is JsonObject secObj && secObj.TryGetPropertyValue("name", out var secName) && secName?.ToString() == "General")
                             {
-                                if (secObj.TryGetPropertyValue("settings", out var settingsNode) && settingsNode is JsonArray settingsArray)
+                                generalFound = true;
+                                if (!secObj.TryGetPropertyValue("settings", out var settingsNode) || settingsNode is not JsonArray settingsArray)
                                 {
-                                    UpdateOrAddSetting(settingsArray, "LowSpecMode", "1");
-                                    UpdateOrAddSetting(settingsArray, "CloseClientDuringGame", "1");
-                                    UpdateOrAddSetting(settingsArray, "WaitForVerticalSync", "0");
+                                    settingsArray = new JsonArray();
+                                    secObj["settings"] = settingsArray;
                                 }
+
+                                UpdateOrAddSetting(settingsArray, "LowSpecMode", "1");
+                                UpdateOrAddSetting(settingsArray, "CloseClientDuringGame", "1");
+                                UpdateOrAddSetting(settingsArray, "WaitForVerticalSync", "0");
                             }
+                        }
+
+                        if (!generalFound)
+                        {
+                            var newSec = new JsonObject
+                            {
+                                ["name"] = "General",
+                                ["settings"] = new JsonArray
+                                {
+                                    new JsonObject { ["name"] = "LowSpecMode", ["value"] = "1" },
+                                    new JsonObject { ["name"] = "CloseClientDuringGame", ["value"] = "1" },
+                                    new JsonObject { ["name"] = "WaitForVerticalSync", ["value"] = "0" }
+                                }
+                            };
+                            sectionsArray.Add(newSec);
                         }
                     }
                 }
 
                 var options = new JsonSerializerOptions { WriteIndented = true };
-                File.WriteAllText(path, node.ToJsonString(options));
+                File.WriteAllText(path, node.ToJsonString(options), Encoding.UTF8);
                 LogMessage?.Invoke("[LoL] Successfully updated PersistedSettings.json with LowSpecMode=1 & CloseClientDuringGame=1.");
             }
         }
@@ -702,6 +752,14 @@ Add-MpPreference -ExclusionProcess 'LeagueClientUx.exe' -ErrorAction SilentlyCon
             {
                 string layersKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
                 _registryService.DeleteValue(RegistryHive.CurrentUser, layersKey, exePath);
+            }
+
+            // Restore backed-up game configs if available
+            var backups = _restoreService.GetBackups();
+            var gameBackups = backups.Where(b => string.Equals(b.Category, gameId, StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (var b in gameBackups)
+            {
+                _restoreService.RestoreFileAsync(b.Id);
             }
 
             LogMessage?.Invoke($"[Revert] Tweaks for {gameId} successfully restored to defaults.");

@@ -22,6 +22,7 @@ public class AuthService : IAuthService
     private readonly string _sessionFilePath;
     private readonly string _localVaultPath;
     private readonly ILocalizationService _loc;
+    private readonly object _vaultLock = new();
 
     private UserAccount? _currentUser;
 
@@ -47,6 +48,13 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(email)) return false;
 
         string trimmed = email.Trim().ToLowerInvariant();
+        int atIndex = trimmed.IndexOf('@');
+        if (atIndex <= 0 || atIndex == trimmed.Length - 1)
+        {
+            // Must have a valid username before '@' and domain after
+            return false;
+        }
+
         return AllowedDomains.Any(domain => trimmed.EndsWith(domain, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -78,41 +86,44 @@ public class AuthService : IAuthService
                     : "Password must contain at least 6 characters.");
             }
 
-            // 2. Load Local Vault
-            var vault = LoadVault();
-            if (vault.ContainsKey(normalizedEmail))
+            lock (_vaultLock)
             {
-                return (false, _loc.IsPortuguese
-                    ? "Este e-mail já está registrado."
-                    : "This email address is already registered.");
+                // 2. Load Local Vault
+                var vault = LoadVault();
+                if (vault.ContainsKey(normalizedEmail))
+                {
+                    return (false, _loc.IsPortuguese
+                        ? "Este e-mail já está registrado."
+                        : "This email address is already registered.");
+                }
+
+                // 3. Hash Password with PBKDF2 (100k iterations)
+                byte[] salt = RandomNumberGenerator.GetBytes(16);
+                byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                    Encoding.UTF8.GetBytes(password),
+                    salt,
+                    iterations: 100_000,
+                    HashAlgorithmName.SHA256,
+                    outputLength: 32);
+
+                string saltHex = Convert.ToHexString(salt);
+                string hashHex = Convert.ToHexString(hash);
+
+                // 4. Role Assignment: STRICTLY victorcatto93@gmail.com is granted Admin
+                var role = string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase)
+                    ? UserRole.Admin
+                    : UserRole.StandardUser;
+
+                vault[normalizedEmail] = $"{saltHex}:{hashHex}:{(int)role}";
+                SaveVault(vault);
+
+                // 5. Automatically log in after registration
+                SetCurrentUser(normalizedEmail, role, rememberMe: true);
+
+                return (true, _loc.IsPortuguese
+                    ? "Conta registrada com sucesso!"
+                    : "Account registered successfully!");
             }
-
-            // 3. Hash Password with PBKDF2
-            byte[] salt = RandomNumberGenerator.GetBytes(16);
-            byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
-                Encoding.UTF8.GetBytes(password),
-                salt,
-                iterations: 100_000,
-                HashAlgorithmName.SHA256,
-                outputLength: 32);
-
-            string saltHex = Convert.ToHexString(salt);
-            string hashHex = Convert.ToHexString(hash);
-
-            // 4. Role Assignment: ONLY victorcatto93@gmail.com is granted Admin
-            var role = string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase)
-                ? UserRole.Admin
-                : UserRole.StandardUser;
-
-            vault[normalizedEmail] = $"{saltHex}:{hashHex}:{(int)role}";
-            SaveVault(vault);
-
-            // 5. Automatically log in after registration
-            SetCurrentUser(normalizedEmail, role, rememberMe: true);
-
-            return (true, _loc.IsPortuguese
-                ? "Conta registrada com sucesso!"
-                : "Account registered successfully!");
         });
     }
 
@@ -137,64 +148,66 @@ public class AuthService : IAuthService
                     : "Domain not allowed. Access restricted to: @gmail.com, @outlook.com, @yahoo.com.br, and @yahoo.com.");
             }
 
-            var vault = LoadVault();
-
-            // First-run master admin bootstrapping if vault is empty
-            if (string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase) && !vault.ContainsKey(normalizedEmail))
+            lock (_vaultLock)
             {
-                // Register initial master admin
-                byte[] salt = RandomNumberGenerator.GetBytes(16);
-                byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                var vault = LoadVault();
+
+                // Master admin bootstrapping if vault does not contain master record yet
+                if (string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase) && !vault.ContainsKey(normalizedEmail))
+                {
+                    byte[] salt = RandomNumberGenerator.GetBytes(16);
+                    byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                        Encoding.UTF8.GetBytes(password),
+                        salt,
+                        100_000,
+                        HashAlgorithmName.SHA256,
+                        32);
+                    vault[normalizedEmail] = $"{Convert.ToHexString(salt)}:{Convert.ToHexString(hash)}:{(int)UserRole.Admin}";
+                    SaveVault(vault);
+                }
+
+                if (!vault.TryGetValue(normalizedEmail, out string? entry) || string.IsNullOrEmpty(entry))
+                {
+                    return (false, _loc.IsPortuguese
+                        ? "Usuário não encontrado ou senha incorreta."
+                        : "User not found or incorrect password.");
+                }
+
+                var parts = entry.Split(':');
+                if (parts.Length < 3)
+                {
+                    return (false, "Corrupted credential record.");
+                }
+
+                byte[] storedSalt = Convert.FromHexString(parts[0]);
+                byte[] storedHash = Convert.FromHexString(parts[1]);
+                int roleVal = int.Parse(parts[2]);
+
+                byte[] computedHash = Rfc2898DeriveBytes.Pbkdf2(
                     Encoding.UTF8.GetBytes(password),
-                    salt,
+                    storedSalt,
                     100_000,
                     HashAlgorithmName.SHA256,
                     32);
-                vault[normalizedEmail] = $"{Convert.ToHexString(salt)}:{Convert.ToHexString(hash)}:{(int)UserRole.Admin}";
-                SaveVault(vault);
+
+                if (!CryptographicOperations.FixedTimeEquals(storedHash, computedHash))
+                {
+                    return (false, _loc.IsPortuguese
+                        ? "Senha incorreta."
+                        : "Incorrect password.");
+                }
+
+                // Verify Single Admin rule: ONLY victorcatto93@gmail.com receives Admin
+                UserRole assignedRole = (roleVal == (int)UserRole.Admin && string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase))
+                    ? UserRole.Admin
+                    : UserRole.StandardUser;
+
+                SetCurrentUser(normalizedEmail, assignedRole, rememberMe);
+
+                return (true, _loc.IsPortuguese
+                    ? "Login efetuado com sucesso!"
+                    : "Login successful!");
             }
-
-            if (!vault.TryGetValue(normalizedEmail, out string? entry) || string.IsNullOrEmpty(entry))
-            {
-                return (false, _loc.IsPortuguese
-                    ? "Usuário não encontrado ou senha incorreta."
-                    : "User not found or incorrect password.");
-            }
-
-            var parts = entry.Split(':');
-            if (parts.Length < 3)
-            {
-                return (false, "Corrupted credential record.");
-            }
-
-            byte[] storedSalt = Convert.FromHexString(parts[0]);
-            byte[] storedHash = Convert.FromHexString(parts[1]);
-            int roleVal = int.Parse(parts[2]);
-
-            byte[] computedHash = Rfc2898DeriveBytes.Pbkdf2(
-                Encoding.UTF8.GetBytes(password),
-                storedSalt,
-                100_000,
-                HashAlgorithmName.SHA256,
-                32);
-
-            if (!CryptographicOperations.FixedTimeEquals(storedHash, computedHash))
-            {
-                return (false, _loc.IsPortuguese
-                    ? "Senha incorreta."
-                    : "Incorrect password.");
-            }
-
-            // Verify Single Admin rule
-            UserRole assignedRole = (roleVal == (int)UserRole.Admin && string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase))
-                ? UserRole.Admin
-                : UserRole.StandardUser;
-
-            SetCurrentUser(normalizedEmail, assignedRole, rememberMe);
-
-            return (true, _loc.IsPortuguese
-                ? "Login efetuado com sucesso!"
-                : "Login successful!");
         });
     }
 
@@ -256,7 +269,7 @@ public class AuthService : IAuthService
                 var user = JsonSerializer.Deserialize<UserAccount>(json);
                 if (user != null && IsDomainAllowed(user.Email))
                 {
-                    // Enforce single admin rule on session restore
+                    // Strictly enforce single admin rule on session restore
                     if (user.Role == UserRole.Admin && !string.Equals(user.Email, MasterAdminEmail, StringComparison.OrdinalIgnoreCase))
                     {
                         user.Role = UserRole.StandardUser;

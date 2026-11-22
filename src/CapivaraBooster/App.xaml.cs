@@ -63,16 +63,22 @@ public partial class App : Application
         var mainWindow = new MainWindow(mainVm);
         mainWindow.Show();
 
-        // 4. Background Initialization (Telemetry & Check Updates)
+        // 4. Background Initialization (Optimized Concurrent Initialization)
         _ = Task.Run(async () =>
         {
-            await dashboardVm.RefreshStatusAsync();
-            await systemBoostVm.InitializeAsync();
-            await gameOptimizerVm.DetectAllGamesAsync();
-            await cleanerVm.ScanAsync();
+            try
+            {
+                // Run status refresh, boost init, and update check concurrently
+                var statusTask = dashboardVm.RefreshStatusAsync();
+                var boostTask = systemBoostVm.InitializeAsync();
+                var updateTask = updater.CheckForUpdatesAsync(silent: true);
 
-            // Background update check on launch
-            await updater.CheckForUpdatesAsync(silent: true);
+                await Task.WhenAll(statusTask, boostTask, updateTask);
+
+                // Run cleaner size scan in background without blocking startup
+                await cleanerVm.ScanAsync();
+            }
+            catch { }
         });
     }
 }

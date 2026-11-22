@@ -51,30 +51,48 @@ public class DebloatService : IDebloatService
 
     public async Task<int> RemoveSelectedBloatwareAsync(IEnumerable<BloatwareItem> items)
     {
-        int removedCount = 0;
-        foreach (var item in items.Where(x => x.IsSelected))
-        {
-            LogMessage?.Invoke($"[Debloat] Removing package: {item.Name} ({item.PackagePattern})...");
+        var targetList = items.Where(x => x.IsSelected).ToList();
+        if (targetList.Count == 0) return 0;
 
-            string script = $@"
-$name = '{item.PackagePattern}'
-Get-AppxPackage -Name *$name* -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like *$name* | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+        LogMessage?.Invoke($"[Debloat] Initiating batched removal of {targetList.Count} UWP packages...");
+
+        // Build a single high-performance PowerShell script to process all packages in a single execution pipeline
+        var patterns = string.Join("', '", targetList.Select(x => x.PackagePattern));
+        string batchScript = $@"
+$patterns = @('{patterns}')
+$removed = 0
+foreach ($pattern in $patterns) {{
+    try {{
+        Get-AppxPackage -Name ""*$pattern*"" -AllUsers -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+        Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -like ""*$pattern*"" }} | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+        Write-Output ""DEBLOAT_OK:$pattern""
+        $removed++
+    }} catch {{
+        Write-Output ""DEBLOAT_FAIL:$pattern""
+    }}
+}}
+Write-Output ""DEBLOAT_TOTAL:$removed""
 ";
-            var result = await _executor.ExecutePowerShellAsync(script);
-            if (result.IsSuccess)
+
+        var result = await _executor.ExecutePowerShellAsync(batchScript);
+
+        int removedCount = 0;
+        foreach (var item in targetList)
+        {
+            if (result.StandardOutput.Contains($"DEBLOAT_OK:{item.PackagePattern}"))
             {
                 item.IsRemoved = true;
                 item.IsInstalled = false;
                 removedCount++;
-                LogMessage?.Invoke($"[Debloat Success] Removed {item.Name}");
+                LogMessage?.Invoke($"[Debloat Success] Removed package: {item.Name} ({item.PackagePattern})");
             }
             else
             {
-                LogMessage?.Invoke($"[Debloat Warning] Notice while removing {item.Name}: {result.StandardError}");
+                LogMessage?.Invoke($"[Debloat Warning] Notice while removing {item.Name}: check Windows logs.");
             }
         }
 
+        LogMessage?.Invoke($"[Debloat Finished] Successfully removed {removedCount} of {targetList.Count} selected packages.");
         return removedCount;
     }
 
@@ -82,20 +100,25 @@ Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like *$name* | Re
     {
         LogMessage?.Invoke("[Telemetry] Disabling Windows Telemetry & Diagnostic tracking services...");
 
+        // 1. Group Policy & Registry telemetry keys
         _registryService.SetDword(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry", 0);
         _registryService.SetDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection", "AllowTelemetry", 0);
         _registryService.SetDword(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Privacy", "TailoredExperiencesWithDiagnosticDataEnabled", 0);
         _registryService.SetDword(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo", "DisabledByGroupPolicy", 1);
         _registryService.SetDword(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo", "Enabled", 0);
 
-        string[] services = { "DiagTrack", "dmwappushservice", "diagnosticshub.standardcollector.service" };
-        foreach (var svc in services)
-        {
-            string cmd = $"Stop-Service -Name '{svc}' -Force -ErrorAction SilentlyContinue; Set-Service -Name '{svc}' -StartupType Disabled -ErrorAction SilentlyContinue";
-            await _executor.ExecutePowerShellAsync(cmd);
-            LogMessage?.Invoke($"[Service] Disabled background service: {svc}");
-        }
+        // 2. High-performance single-pass service disablement
+        string servicesBatch = @"
+$services = @('DiagTrack', 'dmwappushservice', 'diagnosticshub.standardcollector.service')
+foreach ($svc in $services) {
+    Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+}
+";
+        await _executor.ExecutePowerShellAsync(servicesBatch);
+        LogMessage?.Invoke("[Service] Disabled background diagnostic services: DiagTrack, dmwappushservice, standardcollector.");
 
+        // 3. High-performance batch scheduled tasks disablement
         await DisableScheduledTelemetryTasksAsync();
 
         LogMessage?.Invoke("[Telemetry] Windows diagnostic data and telemetry services disabled successfully.");
@@ -110,12 +133,14 @@ Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like *$name* | Re
         _registryService.SetDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection", "AllowTelemetry", 1);
         _registryService.DeleteValue(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo", "DisabledByGroupPolicy");
 
-        string[] services = { "DiagTrack", "dmwappushservice" };
-        foreach (var svc in services)
-        {
-            string cmd = $"Set-Service -Name '{svc}' -StartupType Automatic -ErrorAction SilentlyContinue; Start-Service -Name '{svc}' -ErrorAction SilentlyContinue";
-            await _executor.ExecutePowerShellAsync(cmd);
-        }
+        string servicesRestore = @"
+$services = @('DiagTrack', 'dmwappushservice')
+foreach ($svc in $services) {
+    Set-Service -Name $svc -StartupType Automatic -ErrorAction SilentlyContinue
+    Start-Service -Name $svc -ErrorAction SilentlyContinue
+}
+";
+        await _executor.ExecutePowerShellAsync(servicesRestore);
 
         LogMessage?.Invoke("[Telemetry] Windows telemetry services restored to default.");
         return true;
@@ -123,22 +148,22 @@ Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like *$name* | Re
 
     public async Task<bool> DisableScheduledTelemetryTasksAsync()
     {
-        string[] tasks =
-        {
-            @"\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
-            @"\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
-            @"\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
-            @"\Microsoft\Windows\Application Experience\ProgramDataUpdater",
-            @"\Microsoft\Windows\Autochk\Proxy"
-        };
-
-        foreach (var task in tasks)
-        {
-            string cmd = $"Disable-ScheduledTask -TaskPath '{Path.GetDirectoryName(task)}\\' -TaskName '{Path.GetFileName(task)}' -ErrorAction SilentlyContinue";
-            await _executor.ExecutePowerShellAsync(cmd);
-            LogMessage?.Invoke($"[Scheduled Task] Disabled {task}");
-        }
-
+        string tasksBatch = @"
+$tasks = @(
+    '\Microsoft\Windows\Customer Experience Improvement Program\Consolidator',
+    '\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip',
+    '\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser',
+    '\Microsoft\Windows\Application Experience\ProgramDataUpdater',
+    '\Microsoft\Windows\Autochk\Proxy'
+)
+foreach ($task in $tasks) {
+    $parent = Split-Path $task -Parent
+    $leaf = Split-Path $task -Leaf
+    Disable-ScheduledTask -TaskPath ($parent + '\') -TaskName $leaf -ErrorAction SilentlyContinue
+}
+";
+        await _executor.ExecutePowerShellAsync(tasksBatch);
+        LogMessage?.Invoke("[Scheduled Tasks] Disabled Customer Experience and Compatibility Appraiser tasks.");
         return true;
     }
 }

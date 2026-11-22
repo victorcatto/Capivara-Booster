@@ -3,12 +3,12 @@
 ; =====================================================================
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.0"
+  #define MyAppVersion "1.1.0"
 #endif
 
 #define MyAppName "Capivara Booster"
 #define MyAppPublisher "Capivara Systems Engineering"
-#define MyAppURL "https://github.com/victorcatto93/Capivara-Booster"
+#define MyAppURL "https://github.com/victorcatto/Capivara-Booster"
 #define MyAppExeName "CapivaraBooster.exe"
 
 [Setup]

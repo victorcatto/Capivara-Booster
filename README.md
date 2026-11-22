@@ -58,7 +58,7 @@ Whenever a tag (`v*`) is pushed from VS Code:
 1. Builds .NET 8 WPF binary in Release mode.
 2. Compiles Inno Setup installer (`CapivaraBooster-Setup-vX.X.X.exe`).
 3. Computes SHA-256 checksum and updates `version.json`.
-4. Creates a tagged GitHub Release with the installer asset.
+4. Creates a tagged GitHub Release with the installer asset on repository `https://github.com/victorcatto/Capivara-Booster`.
 
 ### 3. One-Click VS Code Publisher ([publish-update.ps1](file:///c:/Users/User/Documents/PROJETO2/publish-update.ps1))
 Run from terminal or VS Code Task (`Ctrl+Shift+B`):

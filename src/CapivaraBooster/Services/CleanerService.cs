@@ -93,7 +93,7 @@ public class CleanerService : ICleanerService
             {
                 Category = CleanerCategory.DirectXShader,
                 DisplayName = "DirectX Shader Cache",
-                Description = "Compiled DirectX shader cache files in D3DSCache",
+                Description = "Compiled DirectX shader cache files (D3DSCache & DirectX Shader Cache)",
                 TargetPath = Path.Combine(localAppData, "D3DSCache"),
                 IsSelected = true
             },
@@ -118,57 +118,66 @@ public class CleanerService : ICleanerService
 
     public async Task ScanSizesAsync(IEnumerable<CleanerItem> items)
     {
-        await Task.Run(() =>
+        // High-performance asynchronous parallel directory scanning
+        await Parallel.ForEachAsync(items, async (item, ct) =>
         {
-            foreach (var item in items)
+            item.IsScanning = true;
+            try
             {
-                item.IsScanning = true;
-                try
+                await Task.Run(() =>
                 {
-                    if (item.Category == CleanerCategory.DnsCache)
+                    if (item.Category == CleanerCategory.DnsCache || item.Category == CleanerCategory.RecycleBin)
                     {
                         item.SizeBytes = 0;
-                        continue;
+                        return;
+                    }
+
+                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                    if (item.Category == CleanerCategory.DirectXShader)
+                    {
+                        long total = CalculateDirectorySizeSafe(Path.Combine(localAppData, "D3DSCache"))
+                                   + CalculateDirectorySizeSafe(Path.Combine(localAppData, "Microsoft", "DirectX Shader Cache"));
+                        item.SizeBytes = total;
+                        return;
                     }
 
                     if (item.Category == CleanerCategory.NvidiaShader)
                     {
-                        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                        long total = CalculateDirectorySize(Path.Combine(localAppData, "NVIDIA", "DXCache"))
-                                   + CalculateDirectorySize(Path.Combine(localAppData, "NVIDIA", "GLCache"))
-                                   + CalculateDirectorySize(Path.Combine(appData, "NVIDIA", "ComputeCache"));
+                        long total = CalculateDirectorySizeSafe(Path.Combine(localAppData, "NVIDIA", "DXCache"))
+                                   + CalculateDirectorySizeSafe(Path.Combine(localAppData, "NVIDIA", "GLCache"))
+                                   + CalculateDirectorySizeSafe(Path.Combine(appData, "NVIDIA", "ComputeCache"));
                         item.SizeBytes = total;
-                        continue;
+                        return;
                     }
 
                     if (item.Category == CleanerCategory.AmdShader)
                     {
-                        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                        long total = CalculateDirectorySize(Path.Combine(localAppData, "AMD", "DxCache"))
-                                   + CalculateDirectorySize(Path.Combine(localAppData, "AMD", "GLCache"));
+                        long total = CalculateDirectorySizeSafe(Path.Combine(localAppData, "AMD", "DxCache"))
+                                   + CalculateDirectorySizeSafe(Path.Combine(localAppData, "AMD", "GLCache"));
                         item.SizeBytes = total;
-                        continue;
+                        return;
                     }
 
                     if (Directory.Exists(item.TargetPath))
                     {
-                        item.SizeBytes = CalculateDirectorySize(item.TargetPath);
+                        item.SizeBytes = CalculateDirectorySizeSafe(item.TargetPath);
                     }
                     else
                     {
                         item.SizeBytes = 0;
                     }
-                }
-                catch (Exception ex)
-                {
-                    LogMessage?.Invoke($"[Scan Warning] Error reading {item.DisplayName}: {ex.Message}");
-                    item.SizeBytes = 0;
-                }
-                finally
-                {
-                    item.IsScanning = false;
-                }
+                }, ct);
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"[Scan Warning] Error reading {item.DisplayName}: {ex.Message}");
+                item.SizeBytes = 0;
+            }
+            finally
+            {
+                item.IsScanning = false;
             }
         });
     }
@@ -201,39 +210,58 @@ public class CleanerService : ICleanerService
                             break;
 
                         case CleanerCategory.SoftwareDistribution:
-                            await _executor.ExecuteCommandAsync("net stop wuauserv");
-                            var sdResult = CleanDirectoryContents(item.TargetPath);
-                            cleanedBytes += sdResult.Bytes;
-                            filesDeleted += sdResult.Count;
-                            errorsCount += sdResult.Errors;
-                            await _executor.ExecuteCommandAsync("net start wuauserv");
+                            try
+                            {
+                                await _executor.ExecuteCommandAsync("net stop wuauserv");
+                                var sdResult = CleanDirectoryContentsSafe(item.TargetPath);
+                                cleanedBytes += sdResult.Bytes;
+                                filesDeleted += sdResult.Count;
+                                errorsCount += sdResult.Errors;
+                            }
+                            finally
+                            {
+                                // Ensure Windows Update service is always restarted cleanly
+                                await _executor.ExecuteCommandAsync("net start wuauserv");
+                            }
+                            item.IsCleaned = true;
+                            break;
+
+                        case CleanerCategory.DirectXShader:
+                            string localAppDataDx = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                            var dx1 = CleanDirectoryContentsSafe(Path.Combine(localAppDataDx, "D3DSCache"));
+                            var dx2 = CleanDirectoryContentsSafe(Path.Combine(localAppDataDx, "Microsoft", "DirectX Shader Cache"));
+                            cleanedBytes += dx1.Bytes + dx2.Bytes;
+                            filesDeleted += dx1.Count + dx2.Count;
+                            errorsCount += dx1.Errors + dx2.Errors;
                             item.IsCleaned = true;
                             break;
 
                         case CleanerCategory.NvidiaShader:
                             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                            var nv1 = CleanDirectoryContents(Path.Combine(localAppData, "NVIDIA", "DXCache"));
-                            var nv2 = CleanDirectoryContents(Path.Combine(localAppData, "NVIDIA", "GLCache"));
-                            var nv3 = CleanDirectoryContents(Path.Combine(appData, "NVIDIA", "ComputeCache"));
+                            var nv1 = CleanDirectoryContentsSafe(Path.Combine(localAppData, "NVIDIA", "DXCache"));
+                            var nv2 = CleanDirectoryContentsSafe(Path.Combine(localAppData, "NVIDIA", "GLCache"));
+                            var nv3 = CleanDirectoryContentsSafe(Path.Combine(appData, "NVIDIA", "ComputeCache"));
                             cleanedBytes += nv1.Bytes + nv2.Bytes + nv3.Bytes;
                             filesDeleted += nv1.Count + nv2.Count + nv3.Count;
+                            errorsCount += nv1.Errors + nv2.Errors + nv3.Errors;
                             item.IsCleaned = true;
                             break;
 
                         case CleanerCategory.AmdShader:
                             string amdLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                            var amd1 = CleanDirectoryContents(Path.Combine(amdLocal, "AMD", "DxCache"));
-                            var amd2 = CleanDirectoryContents(Path.Combine(amdLocal, "AMD", "GLCache"));
+                            var amd1 = CleanDirectoryContentsSafe(Path.Combine(amdLocal, "AMD", "DxCache"));
+                            var amd2 = CleanDirectoryContentsSafe(Path.Combine(amdLocal, "AMD", "GLCache"));
                             cleanedBytes += amd1.Bytes + amd2.Bytes;
                             filesDeleted += amd1.Count + amd2.Count;
+                            errorsCount += amd1.Errors + amd2.Errors;
                             item.IsCleaned = true;
                             break;
 
                         default:
                             if (Directory.Exists(item.TargetPath))
                             {
-                                var dirResult = CleanDirectoryContents(item.TargetPath);
+                                var dirResult = CleanDirectoryContentsSafe(item.TargetPath);
                                 cleanedBytes += dirResult.Bytes;
                                 filesDeleted += dirResult.Count;
                                 errorsCount += dirResult.Errors;
@@ -261,7 +289,7 @@ public class CleanerService : ICleanerService
         return result.IsSuccess;
     }
 
-    private (long Bytes, int Count, int Errors) CleanDirectoryContents(string path)
+    private (long Bytes, int Count, int Errors) CleanDirectoryContentsSafe(string path)
     {
         if (!Directory.Exists(path)) return (0, 0, 0);
 
@@ -272,8 +300,33 @@ public class CleanerService : ICleanerService
         try
         {
             var dirInfo = new DirectoryInfo(path);
+            DeleteContentsRecursive(dirInfo, ref bytes, ref count, ref errors);
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[Cleaner Notice] Skipping directory {path}: {ex.Message}");
+        }
 
-            foreach (var file in dirInfo.EnumerateFiles("*", SearchOption.AllDirectories))
+        return (bytes, count, errors);
+    }
+
+    private void DeleteContentsRecursive(DirectoryInfo dir, ref long bytes, ref int count, ref int errors)
+    {
+        // Safely enumerate files in current level
+        FileInfo[]? files = null;
+        try
+        {
+            files = dir.GetFiles();
+        }
+        catch
+        {
+            errors++;
+            return;
+        }
+
+        if (files != null)
+        {
+            foreach (var file in files)
             {
                 try
                 {
@@ -285,41 +338,72 @@ public class CleanerService : ICleanerService
                 }
                 catch
                 {
+                    // Locked or permission denied in-use file
                     errors++;
                 }
             }
+        }
 
-            foreach (var subDir in dirInfo.EnumerateDirectories())
+        // Safely enumerate and recurse into subdirectories
+        DirectoryInfo[]? subDirs = null;
+        try
+        {
+            subDirs = dir.GetDirectories();
+        }
+        catch
+        {
+            errors++;
+            return;
+        }
+
+        if (subDirs != null)
+        {
+            foreach (var sub in subDirs)
             {
+                DeleteContentsRecursive(sub, ref bytes, ref count, ref errors);
                 try
                 {
-                    subDir.Delete(true);
+                    sub.Delete(true);
                 }
                 catch
                 {
-                    errors++;
+                    // Subdirectory not empty or locked
                 }
             }
         }
-        catch (Exception ex)
-        {
-            LogMessage?.Invoke($"[Cleaner Notice] Skipping directory {path}: {ex.Message}");
-        }
-
-        return (bytes, count, errors);
     }
 
-    private long CalculateDirectorySize(string path)
+    private long CalculateDirectorySizeSafe(string path)
     {
         if (!Directory.Exists(path)) return 0;
 
         long size = 0;
         try
         {
-            var dir = new DirectoryInfo(path);
-            foreach (var file in dir.EnumerateFiles("*", SearchOption.AllDirectories))
+            var root = new DirectoryInfo(path);
+            var queue = new Queue<DirectoryInfo>();
+            queue.Enqueue(root);
+
+            while (queue.Count > 0)
             {
-                try { size += file.Length; } catch { }
+                var current = queue.Dequeue();
+
+                try
+                {
+                    foreach (var file in current.EnumerateFiles())
+                    {
+                        try { size += file.Length; } catch { }
+                    }
+
+                    foreach (var dir in current.EnumerateDirectories())
+                    {
+                        queue.Enqueue(dir);
+                    }
+                }
+                catch
+                {
+                    // Inaccessible subdirectory ignored safely
+                }
             }
         }
         catch { }

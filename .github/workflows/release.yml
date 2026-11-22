@@ -75,7 +75,7 @@ jobs:
           $manifest.version = "${{ env.VERSION }}"
           $manifest.releaseDate = (Get-Date).ToString("yyyy-MM-dd")
           $manifest.sha256 = $hash
-          $manifest.installerUrl = "https://github.com/victorcatto93/Capivara-Booster/releases/download/v${{ env.VERSION }}/CapivaraBooster-Setup-v${{ env.VERSION }}.exe"
+          $manifest.installerUrl = "https://github.com/victorcatto/Capivara-Booster/releases/download/v${{ env.VERSION }}/CapivaraBooster-Setup-v${{ env.VERSION }}.exe"
           $manifest | ConvertTo-Json -Depth 5 | Set-Content version.json
 
       - name: Create GitHub Release & Upload Assets

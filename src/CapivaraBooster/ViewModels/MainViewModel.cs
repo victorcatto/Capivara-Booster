@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using CapivaraBooster.Common;
 using CapivaraBooster.Models;
 using CapivaraBooster.Services;
@@ -34,6 +36,10 @@ public class MainViewModel : ObservableObject
     // Update State
     private bool _isUpdateBannerVisible;
     private string _updateMessage = string.Empty;
+
+    // High-performance log batching queue and timer
+    private readonly ConcurrentQueue<LogItem> _logQueue = new();
+    private readonly DispatcherTimer _logFlushTimer;
 
     public LocalizationService Loc => LocalizationService.Instance;
     public IAuthService AuthService { get; }
@@ -75,6 +81,14 @@ public class MainViewModel : ObservableObject
         UpdateService = updateService;
 
         LogItems = new ObservableCollection<LogItem>();
+
+        // Flush log queue every 40ms to eliminate UI thread dispatch overhead
+        _logFlushTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(40)
+        };
+        _logFlushTimer.Tick += FlushLogQueue;
+        _logFlushTimer.Start();
 
         // Navigation Command
         NavigateCommand = new RelayCommand(p =>
@@ -347,15 +361,24 @@ public class MainViewModel : ObservableObject
     public void AddLog(string message, LogLevel level = LogLevel.Info)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
+        _logQueue.Enqueue(new LogItem { Message = message, Level = level });
+    }
 
-        Application.Current?.Dispatcher?.InvokeAsync(() =>
+    private void FlushLogQueue(object? sender, EventArgs e)
+    {
+        if (_logQueue.IsEmpty) return;
+
+        int added = 0;
+        while (_logQueue.TryDequeue(out var item) && added < 80)
         {
-            LogItems.Add(new LogItem { Message = message, Level = level });
-            if (LogItems.Count > 1500)
-            {
-                LogItems.RemoveAt(0);
-            }
-        });
+            LogItems.Add(item);
+            added++;
+        }
+
+        while (LogItems.Count > 1000)
+        {
+            LogItems.RemoveAt(0);
+        }
     }
 
     private void ClearLogs()

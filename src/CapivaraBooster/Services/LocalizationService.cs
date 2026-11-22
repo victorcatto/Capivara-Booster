@@ -62,8 +62,6 @@ public class LocalizationService : ILocalizationService
 
     private void LoadDictionary(string langCode)
     {
-        _strings.Clear();
-
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
         string candidate1 = Path.Combine(baseDir, "Localization", $"{langCode}.json");
         string candidate2 = Path.Combine(baseDir, "..", "..", "..", "Localization", $"{langCode}.json");
@@ -77,13 +75,14 @@ public class LocalizationService : ILocalizationService
                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                 if (dict != null)
                 {
+                    _strings.Clear();
                     foreach (var kvp in dict)
                     {
                         _strings[kvp.Key] = kvp.Value;
                     }
                 }
             }
-            catch { /* fallback to default */ }
+            catch { /* retain existing on failure */ }
         }
     }
 

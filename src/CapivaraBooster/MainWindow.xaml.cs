@@ -25,7 +25,7 @@ public partial class MainWindow : Window
                     {
                         ConsoleListBox.ScrollIntoView(ConsoleListBox.Items[^1]);
                     }
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             };
         }
     }

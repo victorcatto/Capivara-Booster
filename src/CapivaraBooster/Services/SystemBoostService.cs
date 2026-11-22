@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.RegularExpressions;
 using CapivaraBooster.Models;
 using Microsoft.Win32;
@@ -33,17 +34,17 @@ public class SystemBoostService : ISystemBoostService
     public async Task<bool> IsHpetDisabledAsync()
     {
         var result = await _executor.ExecuteCommandAsync("bcdedit /enum {current}");
-        if (result.StandardOutput.Contains("useplatformclock        No", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
+        string output = result.StandardOutput;
 
-        if (!result.StandardOutput.Contains("useplatformclock", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
+        // In Windows BCD:
+        // useplatformclock No or absent = HPET clock disabled
+        // useplatformtick Yes = Synthetic timers enabled
+        bool clockDisabled = output.Contains("useplatformclock        No", StringComparison.OrdinalIgnoreCase)
+                             || !output.Contains("useplatformclock", StringComparison.OrdinalIgnoreCase);
 
-        return false;
+        bool tickActive = output.Contains("useplatformtick         Yes", StringComparison.OrdinalIgnoreCase);
+
+        return clockDisabled && tickActive;
     }
 
     public async Task<bool> SetHpetStateAsync(bool disableHpet)
@@ -55,6 +56,7 @@ public class SystemBoostService : ISystemBoostService
             await _executor.ExecuteCommandAsync("bcdedit /deletevalue useplatformclock");
             await _executor.ExecuteCommandAsync("bcdedit /set useplatformclock false");
             await _executor.ExecuteCommandAsync("bcdedit /set useplatformtick yes");
+            await _executor.ExecuteCommandAsync("bcdedit /set disabledynamictick yes");
 
             string pnpScript = @"
 Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
@@ -70,6 +72,7 @@ Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction Silently
 
             await _executor.ExecuteCommandAsync("bcdedit /set useplatformclock true");
             await _executor.ExecuteCommandAsync("bcdedit /deletevalue useplatformtick");
+            await _executor.ExecuteCommandAsync("bcdedit /deletevalue disabledynamictick");
 
             string pnpScript = @"
 Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction SilentlyContinue | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
@@ -88,10 +91,11 @@ Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction Silently
         var dupResult = await _executor.ExecuteCommandAsync("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61");
 
         string guid = "e9a42b02-d5df-448d-aa00-03f14749eb61";
-        var match = Regex.Match(dupResult.StandardOutput, @"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})", RegexOptions.IgnoreCase);
-        if (match.Success)
+        var matches = Regex.Matches(dupResult.StandardOutput, @"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})", RegexOptions.IgnoreCase);
+        if (matches.Count > 0)
         {
-            guid = match.Groups[1].Value;
+            // Pick the latest duplicated GUID reported in output
+            guid = matches[^1].Value;
         }
 
         var setResult = await _executor.ExecuteCommandAsync($"powercfg /setactive {guid}");
@@ -101,6 +105,7 @@ Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction Silently
             return guid;
         }
 
+        // Fallback to standard High Performance GUID
         await _executor.ExecuteCommandAsync("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c");
         LogMessage?.Invoke("[Power Plan] Activated High Performance scheme as fallback.");
         return "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
@@ -181,6 +186,7 @@ Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction Silently
             var list = new List<StartupItem>();
             string runKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
+            // 1. HKCU Run
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(runKey);
@@ -195,15 +201,51 @@ Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction Silently
             }
             catch { }
 
+            // 2. HKLM Run (64-bit)
             try
             {
-                using var key = Registry.LocalMachine.OpenSubKey(runKey);
+                using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                using var key = baseKey.OpenSubKey(runKey);
                 if (key != null)
                 {
                     foreach (var name in key.GetValueNames())
                     {
                         var val = key.GetValue(name)?.ToString() ?? string.Empty;
-                        list.Add(new StartupItem(name, val, "HKLM Run"));
+                        list.Add(new StartupItem(name, val, "HKLM Run (64-bit)"));
+                    }
+                }
+            }
+            catch { }
+
+            // 3. HKLM Run (32-bit WOW64)
+            try
+            {
+                using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                using var key = baseKey.OpenSubKey(runKey);
+                if (key != null)
+                {
+                    foreach (var name in key.GetValueNames())
+                    {
+                        var val = key.GetValue(name)?.ToString() ?? string.Empty;
+                        if (!list.Any(x => x.Name == name))
+                        {
+                            list.Add(new StartupItem(name, val, "HKLM Run (32-bit)"));
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 4. User Startup Folder (.lnk shortcuts)
+            try
+            {
+                string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                if (Directory.Exists(startupFolder))
+                {
+                    foreach (var file in Directory.EnumerateFiles(startupFolder, "*.lnk"))
+                    {
+                        string name = Path.GetFileNameWithoutExtension(file);
+                        list.Add(new StartupItem(name, file, "Startup Folder"));
                     }
                 }
             }

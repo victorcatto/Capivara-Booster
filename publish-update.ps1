@@ -59,7 +59,7 @@ if (Test-Path $manifestFile) {
     $manifest = Get-Content -Raw $manifestFile | ConvertFrom-Json
     $manifest.version = $targetVersion
     $manifest.releaseDate = (Get-Date).ToString("yyyy-MM-dd")
-    $manifest.installerUrl = "https://github.com/victorcatto93/Capivara-Booster/releases/download/v$targetVersion/CapivaraBooster-Setup-v$targetVersion.exe"
+    $manifest.installerUrl = "https://github.com/victorcatto/Capivara-Booster/releases/download/v$targetVersion/CapivaraBooster-Setup-v$targetVersion.exe"
     $manifest | ConvertTo-Json -Depth 5 | Set-Content $manifestFile
     Write-Host "[OK] Updated $manifestFile" -ForegroundColor DarkGreen
 }

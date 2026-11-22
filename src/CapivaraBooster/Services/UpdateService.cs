@@ -11,7 +11,7 @@ namespace CapivaraBooster.Services;
 
 public class UpdateService : IUpdateService
 {
-    private const string RepoOwner = "victorcatto93";
+    private const string RepoOwner = "victorcatto";
     private const string RepoName = "Capivara-Booster";
     private const string VersionManifestUrl = $"https://raw.githubusercontent.com/{RepoOwner}/{RepoName}/main/version.json";
     private const string GitHubApiReleasesUrl = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
@@ -35,8 +35,11 @@ public class UpdateService : IUpdateService
     public UpdateService(ILocalizationService loc)
     {
         _loc = loc;
-        _http = new HttpClient();
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("CapivaraBooster-Client/1.0.0");
+        _http = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(15)
+        };
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("CapivaraBooster-Client/1.1.0");
     }
 
     public async Task<UpdateInfo?> CheckForUpdatesAsync(bool silent = false)
@@ -46,10 +49,10 @@ public class UpdateService : IUpdateService
 
         try
         {
-            string currentVerStr = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+            string currentVerStr = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.1.0";
             var currentVersion = ParseSemanticVersion(currentVerStr);
 
-            // 1. First attempt: Raw version.json manifest
+            // 1. First attempt: Raw version.json manifest from GitHub main branch
             try
             {
                 var manifestJson = await _http.GetStringAsync(VersionManifestUrl);
@@ -161,15 +164,15 @@ public class UpdateService : IUpdateService
 
                 long? totalBytes = response.Content.Headers.ContentLength;
                 using var stream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+                using var fileStream = new FileStream(tempInstallerPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true);
 
-                var buffer = new byte[8192];
+                var buffer = new byte[16384];
                 long totalRead = 0;
                 int bytesRead;
 
                 while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
-                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                     totalRead += bytesRead;
 
                     if (totalBytes.HasValue && totalBytes.Value > 0)
@@ -190,8 +193,9 @@ public class UpdateService : IUpdateService
 
                 if (!string.Equals(computed, _latestUpdate.Sha256Hash, StringComparison.OrdinalIgnoreCase))
                 {
+                    try { File.Delete(tempInstallerPath); } catch { }
                     MessageBox.Show(
-                        _loc.IsPortuguese ? "Falha na verificação de integridade do instalador baixado." : "Downloaded installer hash verification failed.",
+                        _loc.IsPortuguese ? "Falha na verificação de integridade (SHA256) do instalador." : "Downloaded installer SHA256 hash verification failed.",
                         "Capivara Booster Update",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
@@ -199,7 +203,7 @@ public class UpdateService : IUpdateService
                 }
             }
 
-            // Launch installer with silent or UI parameters and close current instance
+            // Launch installer with elevated privileges and close current instance
             var psi = new ProcessStartInfo
             {
                 FileName = tempInstallerPath,
@@ -210,7 +214,7 @@ public class UpdateService : IUpdateService
 
             Process.Start(psi);
 
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current?.Dispatcher?.Invoke(() =>
             {
                 Application.Current.Shutdown();
             });
@@ -219,6 +223,8 @@ public class UpdateService : IUpdateService
         }
         catch (Exception ex)
         {
+            try { if (File.Exists(tempInstallerPath)) File.Delete(tempInstallerPath); } catch { }
+
             MessageBox.Show(
                 (_loc.IsPortuguese ? "Erro ao atualizar: " : "Update error: ") + ex.Message,
                 "Capivara Booster",

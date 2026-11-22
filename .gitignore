@@ -27,11 +27,16 @@ publish/
 auth_config.json
 session.dat
 users_vault.dat
+registry_rollback_store.json
+backups_manifest.json
 *.pfx
 *.p12
 *.key
 *.pem
 *.cer
+*.bak
+*.log
+src/ApexOptimizer/
 
 ## Windows System & OS Artifacts
 Thumbs.db

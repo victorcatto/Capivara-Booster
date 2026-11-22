@@ -211,12 +211,65 @@ public class MainViewModel : ObservableObject
         }
     }
 
-    public bool IsDashboardActive => CurrentTab == NavigationTab.Dashboard;
-    public bool IsDebloatActive => CurrentTab == NavigationTab.Debloat;
-    public bool IsCleanerActive => CurrentTab == NavigationTab.Cleaner;
-    public bool IsSystemBoostActive => CurrentTab == NavigationTab.SystemBoost;
-    public bool IsGameOptimizerActive => CurrentTab == NavigationTab.GameOptimizer;
-    public bool IsBackupRestoreActive => CurrentTab == NavigationTab.BackupRestore;
+    public bool IsDashboardActive
+    {
+        get => CurrentTab == NavigationTab.Dashboard;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.Dashboard)
+                CurrentTab = NavigationTab.Dashboard;
+        }
+    }
+
+    public bool IsDebloatActive
+    {
+        get => CurrentTab == NavigationTab.Debloat;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.Debloat)
+                CurrentTab = NavigationTab.Debloat;
+        }
+    }
+
+    public bool IsCleanerActive
+    {
+        get => CurrentTab == NavigationTab.Cleaner;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.Cleaner)
+                CurrentTab = NavigationTab.Cleaner;
+        }
+    }
+
+    public bool IsSystemBoostActive
+    {
+        get => CurrentTab == NavigationTab.SystemBoost;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.SystemBoost)
+                CurrentTab = NavigationTab.SystemBoost;
+        }
+    }
+
+    public bool IsGameOptimizerActive
+    {
+        get => CurrentTab == NavigationTab.GameOptimizer;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.GameOptimizer)
+                CurrentTab = NavigationTab.GameOptimizer;
+        }
+    }
+
+    public bool IsBackupRestoreActive
+    {
+        get => CurrentTab == NavigationTab.BackupRestore;
+        set
+        {
+            if (value && CurrentTab != NavigationTab.BackupRestore)
+                CurrentTab = NavigationTab.BackupRestore;
+        }
+    }
 
     public string StatusText
     {

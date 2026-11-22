@@ -62,7 +62,7 @@
 
                 <!-- Navigation Tabs -->
                 <StackPanel Grid.Row="1" Margin="14,0">
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDashboardActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDashboardActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="Dashboard">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⚡" FontSize="15" Margin="0,0,12,0" />
@@ -70,7 +70,7 @@
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDebloatActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsDebloatActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="Debloat">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🧹" FontSize="15" Margin="0,0,12,0" />
@@ -78,7 +78,7 @@
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsCleanerActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsCleanerActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="Cleaner">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🧼" FontSize="15" Margin="0,0,12,0" />
@@ -86,7 +86,7 @@
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsSystemBoostActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsSystemBoostActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="SystemBoost">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🚀" FontSize="15" Margin="0,0,12,0" />
@@ -94,7 +94,7 @@
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsGameOptimizerActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsGameOptimizerActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="GameOptimizer">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎮" FontSize="15" Margin="0,0,12,0" />
@@ -102,7 +102,7 @@
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsBackupRestoreActive}"
+                    <RadioButton Style="{StaticResource NavButtonStyle}" IsChecked="{Binding IsBackupRestoreActive, Mode=TwoWay}"
                                  Command="{Binding NavigateCommand}" CommandParameter="BackupRestore">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🛡️" FontSize="15" Margin="0,0,12,0" />
@@ -254,17 +254,17 @@
             <!-- Active Content View Host -->
             <Grid Grid.Row="2">
                 <views:DashboardView DataContext="{Binding DashboardVm}"
-                                     Visibility="{Binding IsDashboardActive, Converter={StaticResource BoolToVis}}" />
+                                     Visibility="{Binding IsDashboardActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 <views:DebloatView DataContext="{Binding DebloatVm}"
-                                   Visibility="{Binding IsDebloatActive, Converter={StaticResource BoolToVis}}" />
+                                   Visibility="{Binding IsDebloatActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 <views:CleanerView DataContext="{Binding CleanerVm}"
-                                   Visibility="{Binding IsCleanerActive, Converter={StaticResource BoolToVis}}" />
+                                   Visibility="{Binding IsCleanerActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 <views:SystemBoostView DataContext="{Binding SystemBoostVm}"
-                                       Visibility="{Binding IsSystemBoostActive, Converter={StaticResource BoolToVis}}" />
+                                       Visibility="{Binding IsSystemBoostActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 <views:GameOptimizerView DataContext="{Binding GameOptimizerVm}"
-                                         Visibility="{Binding IsGameOptimizerActive, Converter={StaticResource BoolToVis}}" />
+                                         Visibility="{Binding IsGameOptimizerActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 <views:BackupRestoreView DataContext="{Binding BackupRestoreVm}"
-                                         Visibility="{Binding IsBackupRestoreActive, Converter={StaticResource BoolToVis}}" />
+                                         Visibility="{Binding IsBackupRestoreActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
             </Grid>
 
             <!-- Grid Splitter -->

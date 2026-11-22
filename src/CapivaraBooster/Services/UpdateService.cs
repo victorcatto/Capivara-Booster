@@ -39,7 +39,7 @@ public class UpdateService : IUpdateService
         {
             Timeout = TimeSpan.FromSeconds(15)
         };
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("CapivaraBooster-Client/1.1.0");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("CapivaraBooster-Client/1.1.1");
     }
 
     public async Task<UpdateInfo?> CheckForUpdatesAsync(bool silent = false)

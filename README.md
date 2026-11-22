@@ -35,7 +35,7 @@
 
 ### **[ 🚀 DOWNLOAD CAPIVARA BOOSTER (LATEST INSTALLER) ](https://github.com/victorcatto/Capivara-Booster/releases/latest/download/CapivaraBooster-Setup.exe)**
 
-**Version:** `v1.1.0` *(Latest Stable Release)* &nbsp;|&nbsp; **File:** `CapivaraBooster-Setup.exe` (~15 MB)  
+**Version:** `v1.1.1` *(Latest Stable Release)* &nbsp;|&nbsp; **File:** `CapivaraBooster-Setup.exe` (~15 MB)  
 *Or browse all release assets: [GitHub Releases](https://github.com/victorcatto/Capivara-Booster/releases/latest)*
 
 <br/>

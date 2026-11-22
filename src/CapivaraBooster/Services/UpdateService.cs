@@ -106,7 +106,10 @@ public class UpdateService : IUpdateService
                             if (assetName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || assetName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                             {
                                 downloadUrl = asset.GetProperty("browser_download_url").GetString() ?? "";
-                                break;
+                                if (assetName.Equals("CapivaraBooster-Setup.exe", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -219,6 +222,9 @@ public class UpdateService : IUpdateService
                 Application.Current.Shutdown();
             });
 
+            // Ensure entire process tree terminates cleanly to prevent file locks
+            Environment.Exit(0);
+
             return true;
         }
         catch (Exception ex)
@@ -241,10 +247,14 @@ public class UpdateService : IUpdateService
     private Version ParseSemanticVersion(string ver)
     {
         string clean = ver.Trim().TrimStart('v', 'V');
+        int dashIdx = clean.IndexOfAny(new[] { '-', '+' });
+        if (dashIdx > 0) clean = clean.Substring(0, dashIdx);
+
         var parts = clean.Split('.');
         int major = parts.Length > 0 && int.TryParse(parts[0], out int mj) ? mj : 1;
         int minor = parts.Length > 1 && int.TryParse(parts[1], out int mn) ? mn : 0;
         int build = parts.Length > 2 && int.TryParse(parts[2], out int bd) ? bd : 0;
-        return new Version(major, minor, build);
+        int revision = parts.Length > 3 && int.TryParse(parts[3], out int rev) ? rev : 0;
+        return new Version(major, minor, build, revision);
     }
 }

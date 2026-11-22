@@ -70,6 +70,11 @@ jobs:
           echo "INSTALLER_HASH=$hash" >> $env:GITHUB_ENV
           echo "INSTALLER_PATH=$installerPath" >> $env:GITHUB_ENV
 
+          # Create unversioned direct download installer alias
+          $directInstallerPath = "./publish/installer/CapivaraBooster-Setup.exe"
+          Copy-Item $installerPath $directInstallerPath -Force
+          echo "DIRECT_INSTALLER_PATH=$directInstallerPath" >> $env:GITHUB_ENV
+
           # Update version.json
           $manifest = Get-Content -Raw version.json | ConvertFrom-Json
           $manifest.version = "${{ env.VERSION }}"
@@ -87,6 +92,7 @@ jobs:
           prerelease: false
           files: |
             ${{ env.INSTALLER_PATH }}
+            ${{ env.DIRECT_INSTALLER_PATH }}
             version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

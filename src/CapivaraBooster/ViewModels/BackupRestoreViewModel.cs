@@ -48,8 +48,15 @@ public class BackupRestoreViewModel : ObservableObject
     public int TrackedRegistryKeysCount
     {
         get => _trackedRegistryKeysCount;
-        set => SetProperty(ref _trackedRegistryKeysCount, value);
+        set
+        {
+            if (SetProperty(ref _trackedRegistryKeysCount, value))
+                OnPropertyChanged(nameof(TrackedRegistryKeysDisplay));
+        }
     }
+
+    public string TrackedRegistryKeysDisplay =>
+        $"{Loc["Backup_TrackedKeys_Prefix"]}{_trackedRegistryKeysCount}";
 
     public bool IsBusy
     {

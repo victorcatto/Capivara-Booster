@@ -121,5 +121,33 @@
   "Backup_Files_Title": "Game Configuration File Snapshots",
   "Backup_Files_Desc": "Historical backups of autoexec.cfg, game.cfg, and PersistedSettings.json taken prior to applying tweaks.",
   "Backup_OpenFolder_Btn": "Open Backups Folder",
-  "Backup_RestoreFile_Btn": "Restore Selected File"
+  "Backup_RestoreFile_Btn": "Restore Selected File",
+
+  "Nav_CheckUpdates": "Check for Updates",
+  "Auth_LoginRegister": "Login / Register",
+  "Auth_Logout": "Logout",
+  "Update_Banner_Btn": "Update Now",
+  "Auth_Modal_Subtitle": "User Authentication & Admin Gateway",
+  "Auth_Modal_TabLogin": "Login",
+  "Auth_Modal_TabSignUp": "Sign Up",
+  "Auth_Modal_EmailLabel": "Email Address:",
+  "Auth_Modal_AllowedDomains": "Allowed: @gmail.com, @outlook.com, @yahoo.com.br, @yahoo.com",
+  "Auth_Modal_PasswordLabel": "Password:",
+  "Auth_Modal_LoginBtn": "Log In to Capivara Booster",
+  "Auth_Modal_RegisterBtn": "Create Account",
+
+  "SystemBoost_Tweak1_Title": "Network Throttling Index (0xFFFFFFFF) & SystemResponsiveness (0)",
+  "SystemBoost_Tweak1_Desc": "Disables packet throttling during non-multimedia tasks, removing packet queues and smoothing ping.",
+  "SystemBoost_Tweak1_Tag": "Network/DPC",
+  "SystemBoost_Tweak2_Title": "Disable Game DVR & Background Capture Hooks",
+  "SystemBoost_Tweak2_Desc": "Eliminates Xbox Game DVR background encoding that steals GPU encoder bandwidth and creates input lag.",
+  "SystemBoost_Tweak2_Tag": "Input Latency",
+  "SystemBoost_Tweak3_Title": "Disable Fullscreen Optimizations Globally (GameConfigStore)",
+  "SystemBoost_Tweak3_Desc": "Prevents DWM compositing layer injection, granting direct exclusive display access.",
+  "SystemBoost_Tweak3_Tag": "Display Buffer",
+  "SystemBoost_Tweak4_Title": "Disable Windows Background Applications Globally",
+  "SystemBoost_Tweak4_Desc": "Blocks idle UWP applications and search app tasks from waking up and interrupting active gaming threads.",
+  "SystemBoost_Tweak4_Tag": "CPU Threads",
+
+  "Backup_TrackedKeys_Prefix": "Tracked Registry Keys in Rollback Log: "
 }

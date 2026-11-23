@@ -121,5 +121,33 @@
   "Backup_Files_Title": "Instantâneos de Arquivos de Configuração de Jogos",
   "Backup_Files_Desc": "Histórico de backups de autoexec.cfg, game.cfg e PersistedSettings.json gerados antes da aplicação de qualquer otimização.",
   "Backup_OpenFolder_Btn": "Abrir Pasta de Backups",
-  "Backup_RestoreFile_Btn": "Restaurar Arquivo Selecionado"
+  "Backup_RestoreFile_Btn": "Restaurar Arquivo Selecionado",
+
+  "Nav_CheckUpdates": "Verificar Atualizações",
+  "Auth_LoginRegister": "Entrar / Cadastrar",
+  "Auth_Logout": "Sair",
+  "Update_Banner_Btn": "Atualizar Agora",
+  "Auth_Modal_Subtitle": "Autenticação de Usuário & Portal do Administrador",
+  "Auth_Modal_TabLogin": "Entrar",
+  "Auth_Modal_TabSignUp": "Cadastrar",
+  "Auth_Modal_EmailLabel": "Endereço de E-mail:",
+  "Auth_Modal_AllowedDomains": "Permitidos: @gmail.com, @outlook.com, @yahoo.com.br, @yahoo.com",
+  "Auth_Modal_PasswordLabel": "Senha:",
+  "Auth_Modal_LoginBtn": "Entrar no Capivara Booster",
+  "Auth_Modal_RegisterBtn": "Criar Conta",
+
+  "SystemBoost_Tweak1_Title": "Network Throttling Index (0xFFFFFFFF) & SystemResponsiveness (0)",
+  "SystemBoost_Tweak1_Desc": "Desativa o throttling de pacotes em tarefas não multimídia, removendo filas de pacotes e suavizando o ping.",
+  "SystemBoost_Tweak1_Tag": "Network/DPC",
+  "SystemBoost_Tweak2_Title": "Desativar Game DVR & Hooks de Captura em Segundo Plano",
+  "SystemBoost_Tweak2_Desc": "Elimina a codificação em segundo plano do Xbox Game DVR que rouba largura de banda do encoder da GPU e cria input lag.",
+  "SystemBoost_Tweak2_Tag": "Input Latency",
+  "SystemBoost_Tweak3_Title": "Desativar Otimizações de Tela Inteira Globalmente (GameConfigStore)",
+  "SystemBoost_Tweak3_Desc": "Impede a injeção da camada de composição DWM, concedendo acesso exclusivo direto ao display.",
+  "SystemBoost_Tweak3_Tag": "Display Buffer",
+  "SystemBoost_Tweak4_Title": "Desativar Aplicativos em Segundo Plano do Windows Globalmente",
+  "SystemBoost_Tweak4_Desc": "Bloqueia aplicativos UWP ociosos e tarefas de busca de acordar e interromper threads de jogo ativos.",
+  "SystemBoost_Tweak4_Tag": "CPU Threads",
+
+  "Backup_TrackedKeys_Prefix": "Chaves de registro monitoradas para rollback: "
 }

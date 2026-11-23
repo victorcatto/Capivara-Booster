@@ -16,12 +16,18 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}"><views:DashboardView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DebloatViewModel}"><views:DebloatView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CleanerViewModel}"><views:CleanerView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SystemBoostViewModel}"><views:SystemBoostView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GameOptimizerViewModel}"><views:GameOptimizerView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BackupRestoreViewModel}"><views:BackupRestoreView /></DataTemplate>
     </Window.Resources>
 
     <Grid>
         <!-- Split into Left Sidebar and Right Main Viewport -->
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="255" />
+            <ColumnDefinition Width="265" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -38,7 +44,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Brand Header with Capivara Emblem -->
-                <Border Grid.Row="0" Margin="18,22,18,20" Background="#181A24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                <Border Grid.Row="0" Margin="14,18,14,18" Background="#181A24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="12,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="52" />
@@ -46,15 +52,15 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Capivara Logo Image -->
-                        <Border Grid.Column="0" Width="46" Height="46" CornerRadius="10" ClipToBounds="True" Background="#0F1015" BorderBrush="{StaticResource PrimaryAccentBrush}" BorderThickness="1.5">
+                        <Border Grid.Column="0" Width="42" Height="42" CornerRadius="10" ClipToBounds="True" Background="#0F1015" BorderBrush="{StaticResource PrimaryAccentBrush}" BorderThickness="1.5">
                             <Image Source="pack://application:,,,/Assets/logo.png" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
 
                         <!-- Title and Tagline -->
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
-                            <TextBlock Text="{Binding Loc[App_Title]}" FontWeight="Bold" FontSize="15" Foreground="{StaticResource PrimaryAccentBrush}" />
+                            <TextBlock Text="{Binding Loc[App_Title]}" FontWeight="Bold" FontSize="14.5" Foreground="{StaticResource PrimaryAccentBrush}" TextTrimming="None" />
                             <Border Background="#2B1440" CornerRadius="4" Padding="6,2" Margin="0,3,0,0" HorizontalAlignment="Left">
-                                <TextBlock Text="{Binding Loc[App_VersionBadge]}" FontSize="9.5" Foreground="{StaticResource SecondaryAccentBrush}" FontWeight="Bold" />
+                                <TextBlock Text="{Binding AppVersionBadge}" FontSize="9.5" Foreground="{StaticResource SecondaryAccentBrush}" FontWeight="Bold" />
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -113,7 +119,7 @@
 
                 <!-- Footer Elevation Status & Quick Update Check -->
                 <StackPanel Grid.Row="2" Margin="14,0,14,18">
-                    <Button Content="Check Updates" Style="{StaticResource SecondaryButtonStyle}"
+                    <Button Content="{Binding Loc[Nav_CheckUpdates]}" Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding CheckUpdatesCommand}" Margin="0,0,0,10" Padding="8,5" FontSize="11" />
 
                     <Border Background="{StaticResource CardBgBrush}" BorderBrush="{StaticResource BorderBrush}"
@@ -194,7 +200,7 @@
                             </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="👤" Margin="0,0,6,0" />
-                                <TextBlock Text="Login / Register" />
+                                <TextBlock Text="{Binding Loc[Auth_LoginRegister]}" />
                             </StackPanel>
                         </Button>
 
@@ -222,7 +228,7 @@
                                     <TextBlock Text="{Binding UserRoleDisplay}" FontWeight="Bold" FontSize="10" Foreground="#FFFFFF" />
                                 </Border>
 
-                                <Button Content="Logout" Style="{StaticResource DangerButtonStyle}"
+                                <Button Content="{Binding Loc[Auth_Logout]}" Style="{StaticResource DangerButtonStyle}"
                                         Command="{Binding LogoutCommand}" Padding="8,3" FontSize="11" Margin="4,0,0,0" />
                             </StackPanel>
                         </Border>
@@ -243,7 +249,7 @@
                         <TextBlock Text="{Binding UpdateMessage}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryAccentBrush}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="Update Now" Style="{StaticResource PrimaryCyberButtonStyle}"
+                        <Button Content="{Binding Loc[Update_Banner_Btn]}" Style="{StaticResource PrimaryCyberButtonStyle}"
                                 Command="{Binding ApplyUpdateCommand}" Padding="12,5" FontSize="11" Margin="0,0,8,0" />
                         <Button Content="✕" Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding DismissUpdateBannerCommand}" Padding="8,4" FontSize="11" />
@@ -251,21 +257,8 @@
                 </Grid>
             </Border>
 
-            <!-- Active Content View Host -->
-            <Grid Grid.Row="2">
-                <views:DashboardView DataContext="{Binding DashboardVm}"
-                                     Visibility="{Binding IsDashboardActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                <views:DebloatView DataContext="{Binding DebloatVm}"
-                                   Visibility="{Binding IsDebloatActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                <views:CleanerView DataContext="{Binding CleanerVm}"
-                                   Visibility="{Binding IsCleanerActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                <views:SystemBoostView DataContext="{Binding SystemBoostVm}"
-                                       Visibility="{Binding IsSystemBoostActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                <views:GameOptimizerView DataContext="{Binding GameOptimizerVm}"
-                                         Visibility="{Binding IsGameOptimizerActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                <views:BackupRestoreView DataContext="{Binding BackupRestoreVm}"
-                                         Visibility="{Binding IsBackupRestoreActive, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-            </Grid>
+            <!-- Active Content View Host (MVVM ContentControl - only one view rendered at a time) -->
+            <ContentControl Grid.Row="2" Content="{Binding CurrentViewModel}" Focusable="False" />
 
             <!-- Grid Splitter -->
             <GridSplitter Grid.Row="3" Height="2" HorizontalAlignment="Stretch" Background="{StaticResource BorderBrush}" />
@@ -312,7 +305,8 @@
                              VirtualizingPanel.VirtualizationMode="Recycling"
                              VirtualizingPanel.ScrollUnit="Pixel"
                              FontFamily="Cascadia Code, Consolas, Courier New"
-                             FontSize="11.5">
+                             FontSize="11.5"
+                             Padding="14,4,14,16">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="14,1.5" />
@@ -356,7 +350,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="CAPIVARA BOOSTER" FontWeight="Bold" FontSize="18" Foreground="{StaticResource PrimaryAccentBrush}" />
-                            <TextBlock Text="User Authentication &amp; Admin Gateway" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding Loc[Auth_Modal_Subtitle]}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
                         </StackPanel>
                         <Button Grid.Column="1" Content="✕" Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding CloseAuthModalCommand}" Padding="8,4" FontSize="12" />
@@ -371,7 +365,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Content="Login"
+                            <Button Grid.Column="0" Content="{Binding Loc[Auth_Modal_TabLogin]}"
                                     Command="{Binding SwitchAuthModeCommand}" Margin="2">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
@@ -385,7 +379,7 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
-                            <Button Grid.Column="1" Content="Sign Up"
+                            <Button Grid.Column="1" Content="{Binding Loc[Auth_Modal_TabSignUp]}"
                                     Command="{Binding SwitchAuthModeCommand}" Margin="2">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
@@ -403,15 +397,15 @@
                     </Border>
 
                     <!-- Email Field -->
-                    <TextBlock Text="Email Address:" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                    <TextBlock Text="{Binding Loc[Auth_Modal_EmailLabel]}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
                     <TextBox Text="{Binding AuthEmail, UpdateSourceTrigger=PropertyChanged}" Height="36"
                              Background="#10121A" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}"
                              BorderThickness="1" Padding="10,6" FontSize="12.5" Margin="0,0,0,6" />
-                    <TextBlock Text="Allowed: @gmail.com, @outlook.com, @yahoo.com.br, @yahoo.com"
+                    <TextBlock Text="{Binding Loc[Auth_Modal_AllowedDomains]}"
                                FontSize="10.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,14" />
 
                     <!-- Password Field -->
-                    <TextBlock Text="Password:" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                    <TextBlock Text="{Binding Loc[Auth_Modal_PasswordLabel]}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4" />
                     <TextBox Text="{Binding AuthPassword, UpdateSourceTrigger=PropertyChanged}" Height="36"
                              Background="#10121A" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}"
                              BorderThickness="1" Padding="10,6" FontSize="12.5" Margin="0,0,0,12" />
@@ -422,7 +416,7 @@
 
                     <!-- Action Buttons -->
                     <!-- Login Button -->
-                    <Button Content="Log In to Capivara Booster"
+                    <Button Content="{Binding Loc[Auth_Modal_LoginBtn]}"
                             Command="{Binding LoginCommand}" Padding="16,10" Margin="0,0,0,8">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryCyberButtonStyle}">
@@ -439,7 +433,7 @@
                     </Button>
 
                     <!-- Register Button -->
-                    <Button Content="Create Account"
+                    <Button Content="{Binding Loc[Auth_Modal_RegisterBtn]}"
                             Command="{Binding RegisterCommand}" Padding="16,10" Margin="0,0,0,8">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryCyberButtonStyle}">

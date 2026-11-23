@@ -49,7 +49,7 @@
                         <TextBlock Text="{Binding Loc[Backup_Registry_Title]}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
                         <TextBlock Text="{Binding Loc[Backup_Registry_Desc]}"
                                    FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                        <TextBlock Text="{Binding TrackedRegistryKeysCount, StringFormat='Tracked Registry Keys in Rollback Log: {0}'}"
+                        <TextBlock Text="{Binding TrackedRegistryKeysDisplay}"
                                    FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" Margin="0,6,0,0" />
                     </StackPanel>
 

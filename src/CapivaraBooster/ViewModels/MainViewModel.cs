@@ -105,6 +105,7 @@ public class MainViewModel : ObservableObject
         {
             string lang = p?.ToString() ?? "pt-BR";
             Loc.SetLanguage(lang);
+            OnPropertyChanged(nameof(AppVersionBadge));
             AddLog(Loc.IsPortuguese
                 ? $"Idioma alterado para Português (Brasil)."
                 : $"Language changed to English (US).", LogLevel.Info);
@@ -189,6 +190,27 @@ public class MainViewModel : ObservableObject
         }
     }
 
+    public object CurrentViewModel => CurrentTab switch
+    {
+        NavigationTab.Dashboard    => DashboardVm,
+        NavigationTab.Debloat      => DebloatVm,
+        NavigationTab.Cleaner      => CleanerVm,
+        NavigationTab.SystemBoost  => SystemBoostVm,
+        NavigationTab.GameOptimizer => GameOptimizerVm,
+        NavigationTab.BackupRestore => BackupRestoreVm,
+        _                          => DashboardVm
+    };
+
+    public string AppVersionBadge
+    {
+        get
+        {
+            string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.1.2";
+            string edition = Loc.IsPortuguese ? "Edição Pro Esports" : "Pro Esports Edition";
+            return $"v{ver} • {edition}";
+        }
+    }
+
     public NavigationTab CurrentTab
     {
         get => _currentTab;
@@ -202,6 +224,7 @@ public class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsSystemBoostActive));
                 OnPropertyChanged(nameof(IsGameOptimizerActive));
                 OnPropertyChanged(nameof(IsBackupRestoreActive));
+                OnPropertyChanged(nameof(CurrentViewModel));
 
                 if (_currentTab == NavigationTab.BackupRestore)
                 {

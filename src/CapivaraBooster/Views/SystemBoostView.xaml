@@ -96,11 +96,11 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Network Throttling Index (0xFFFFFFFF) &amp; SystemResponsiveness (0)" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Disables packet throttling during non-multimedia tasks, removing packet queues and smoothing ping." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak1_Title]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak1_Desc]}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <Border Grid.Column="1" Background="#1B2233" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
-                                    <TextBlock Text="Network/DPC" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak1_Tag]}" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
                                 </Border>
                             </Grid>
                         </Border>
@@ -112,11 +112,11 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Disable Game DVR &amp; Background Capture Hooks" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Eliminates Xbox Game DVR background encoding that steals GPU encoder bandwidth and creates input lag." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak2_Title]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak2_Desc]}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <Border Grid.Column="1" Background="#1B2233" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
-                                    <TextBlock Text="Input Latency" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak2_Tag]}" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
                                 </Border>
                             </Grid>
                         </Border>
@@ -128,11 +128,11 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Disable Fullscreen Optimizations Globally (GameConfigStore)" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Prevents DWM compositing layer injection, granting direct exclusive display access." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak3_Title]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak3_Desc]}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <Border Grid.Column="1" Background="#1B2233" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
-                                    <TextBlock Text="Display Buffer" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak3_Tag]}" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
                                 </Border>
                             </Grid>
                         </Border>
@@ -144,11 +144,11 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Disable Windows Background Applications Globally" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Blocks idle UWP applications and search app tasks from waking up and interrupting active gaming threads." FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak4_Title]}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak4_Desc]}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <Border Grid.Column="1" Background="#1B2233" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
-                                    <TextBlock Text="CPU Threads" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
+                                    <TextBlock Text="{Binding Loc[SystemBoost_Tweak4_Tag]}" FontSize="11" Foreground="{StaticResource PrimaryAccentBrush}" />
                                 </Border>
                             </Grid>
                         </Border>

@@ -38,15 +38,15 @@ jobs:
 
       - name: Check Rust Compilation
         working-directory: src-tauri
-        run: cargo check --locked 2>&1 | Out-String -Stream | Select-Object -First 200
+        run: cargo check
 
       - name: Run Rust Tests
         working-directory: src-tauri
-        run: cargo test --locked
+        run: cargo test
 
       - name: Build Release Binary
         working-directory: src-tauri
-        run: cargo build --release --locked
+        run: cargo build --release
 
       - name: Validate Binary Exists
         shell: pwsh

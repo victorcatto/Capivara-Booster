@@ -1,17 +1,54 @@
-// Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod models;
 mod services;
+
+use commands::AppState;
+use services::auth::AuthService;
+use services::cleaner::CleanerService;
+use services::debloat::DebloatService;
+use services::i18n::I18nService;
+use services::registry::RegistryService;
+use services::restore::RestoreService;
+use services::system_boost::SystemBoostService;
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+        .manage(AppState {
+            auth: std::sync::Mutex::new(AuthService::new()),
+            registry: std::sync::Mutex::new(RegistryService::new()),
+            restore: std::sync::Mutex::new(RestoreService::new()),
+            cleaner: std::sync::Mutex::new(CleanerService::new()),
+            boost: std::sync::Mutex::new(SystemBoostService::new()),
+            debloat: std::sync::Mutex::new(DebloatService::new()),
+            i18n: std::sync::Mutex::new(I18nService::new()),
+            logs: std::sync::Mutex::new(Vec::new()),
+        })
         .invoke_handler(tauri::generate_handler![
-            commands::get_system_info,
-            commands::toggle_console,
-            commands::change_language
+            commands::get_logs,
+            commands::clear_logs,
+            commands::get_auth_state,
+            commands::login,
+            commands::register,
+            commands::logout,
+            commands::get_cleaner_items,
+            commands::get_bloatware_items,
+            commands::clean_item,
+            commands::flush_dns,
+            commands::apply_system_optimizations,
+            commands::revert_system_optimizations,
+            commands::revert_registry,
+            commands::create_restore_point,
+            commands::remove_bloatware,
+            commands::disable_telemetry,
+            commands::detect_game,
+            commands::generate_cs2_autoexec,
+            commands::get_startup_items,
+            commands::check_updates,
+            commands::get_i18n,
+            commands::set_language
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("erro ao executar o aplicativo Tauri");
 }

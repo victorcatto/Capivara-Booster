@@ -1,30 +1,73 @@
 import './styles/theme.css';
 import './styles/controls.css';
+import { loadI18n, t } from './i18n';
+import { invoke } from './tauri';
+import { refreshAuth, renderAuth, setupConsoleToggle, setupLanguageSwitch, applyLanguage, addLog, refreshLogs, el } from './shell';
+import { renderDashboard } from './views/dashboard';
+import { renderDebloat } from './views/debloat';
+import { renderCleaner } from './views/cleaner';
+import { renderBoost } from './views/boost';
+import { renderGames } from './views/games';
+import { renderBackup } from './views/backup';
 
-const app = document.getElementById('app');
+type ViewRenderer = (host: HTMLElement) => Promise<void> | void;
 
-if (app) {
-  app.innerHTML = `
-    <aside class="sidebar">
-      <div style="padding: 0 0 18px 0; display:flex; align-items:center; gap:12px;">
-        <div style="width:42px;height:42px;border-radius:10px;background:var(--gradient);"></div>
-        <div>
-          <div style="font-weight:700;font-size:14.5px;color:var(--accent-cyan);">CAPIVARA BOOSTER</div>
-          <div style="font-size:9.5px;color:var(--accent-purple);">v2.0.0 Rust</div>
-        </div>
-      </div>
-      <div class="nav-item active">⚡ Dashboard</div>
-      <div class="nav-item">🧹 Debloat</div>
-      <div class="nav-item">🧼 Cleaner</div>
-      <div class="nav-item">🚀 System Boost</div>
-      <div class="nav-item">🎮 Game Optimizer</div>
-      <div class="nav-item">🛡️ Backup & Restore</div>
-    </aside>
-    <main style="padding:30px;">
-      <h1 style="font-size:24px;font-weight:700;">Visão Geral do Sistema</h1>
-      <p style="color:var(--text-secondary);font-size:13px;margin-top:4px;">
-        Backend Rust + Tauri v2 ativo. UI em migração.
-      </p>
-    </main>
-  `;
+const views: Record<string, ViewRenderer> = {
+  dashboard: renderDashboard,
+  debloat: renderDebloat,
+  cleaner: renderCleaner,
+  boost: renderBoost,
+  games: renderGames,
+  backup: renderBackup,
+};
+
+let currentView = 'dashboard';
+
+async function navigate(view: string): Promise<void> {
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', (n as HTMLElement).dataset.view === view));
+  const host = el<HTMLElement>('#view-host');
+  if (host) await views[view]?.(host);
 }
+
+async function checkUpdates(silent: boolean): Promise<void> {
+  try {
+    const result = await invoke<{ available: boolean; version: string | null }>('check_updates');
+    if (result.available && result.version) {
+      addLog(`🚀 ${t('Update_Available', 'Nova versão disponível')}: v${result.version}`);
+    } else if (!silent) {
+      addLog('✅ ' + t('Up_To_Date', 'Aplicativo atualizado'));
+    }
+  } catch (e) {
+    if (!silent) addLog('⚠️ ' + String(e));
+  }
+}
+
+async function boot(): Promise<void> {
+  await loadI18n();
+  document.querySelectorAll('[data-i18n]').forEach((elx) => {
+    const key = (elx as HTMLElement).dataset.i18n as string;
+    elx.textContent = t(key);
+  });
+
+  setupConsoleToggle();
+  setupLanguageSwitch();
+  await refreshAuth();
+  renderAuth();
+
+  document.querySelectorAll('.nav-item').forEach((n) => {
+    n.addEventListener('click', () => navigate((n as HTMLElement).dataset.view as string));
+  });
+
+  el<HTMLButtonElement>('#btn-check-updates')?.addEventListener('click', () => checkUpdates(false));
+
+  window.addEventListener('language-changed', () => {
+    navigate(currentView);
+  });
+
+  await navigate('dashboard');
+  refreshLogs();
+  checkUpdates(true);
+}
+
+boot();

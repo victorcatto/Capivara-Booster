@@ -1,70 +1,33 @@
-/* Capivara Booster - Controles (porta de Controls.xaml) */
-.btn {
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.btn-primary {
-  background: var(--gradient);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  filter: brightness(1.15);
-}
-
-.btn-secondary {
-  background: var(--card);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-}
-
-.btn-secondary:hover {
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.sidebar {
-  background: var(--sidebar);
-  border-right: 1px solid var(--border);
-  padding: 18px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s ease;
-}
-
-.nav-item:hover {
-  background: var(--card-hover);
-  color: var(--text-primary);
-}
-
-.nav-item.active {
-  background: #1D212E;
-  color: var(--accent-cyan);
-  font-weight: 700;
-}
+.btn { border: none; border-radius: 8px; padding: 12px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
+.btn-primary { background: var(--gradient); color: #fff; }
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-secondary { background: var(--card); color: var(--text-primary); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+.btn-danger { background: #290E17; color: var(--danger); border: 1px solid #541624; }
+.btn-danger:hover { background: #401524; border-color: var(--danger); }
+.btn-sm { padding: 6px 10px; font-size: 11px; }
+.btn-block { width: 100%; padding: 12px; font-size: 14px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.status-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.sidebar { background: var(--sidebar); border-right: 1px solid var(--border); padding: 18px 14px; display: flex; flex-direction: column; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 8px; color: var(--text-secondary); cursor: pointer; font-size: 13px; transition: all 0.15s ease; border: 0; background: transparent; text-align: left; width: 100%; }
+.nav-item:hover { background: var(--card-hover); color: var(--text-primary); }
+.nav-item.active { background: #1D212E; color: var(--accent-cyan); font-weight: 700; }
+.sidebar-footer { margin-top: auto; padding-top: 16px; }
+.sidebar-status { display: flex; align-items: center; gap: 10px; padding: 12px 10px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex: none; }
+.section { margin-bottom: 24px; }
+.section h3 { font-size: 16px; margin-bottom: 12px; }
+.list-row { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; margin-bottom: 8px; background: #12141F; border: 1px solid var(--border); border-radius: 6px; }
+.list-row .name { font-weight: 600; font-size: 13px; }
+.list-row .desc { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+.size-badge { padding: 6px 10px; border-radius: 4px; background: #1D2235; color: var(--accent-cyan); font-weight: 700; font-size: 12px; white-space: nowrap; }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-cyan); cursor: pointer; }
+.progress { height: 6px; margin: 8px 0 0; background: #0D0E15; border-radius: 3px; overflow: hidden; }
+.progress-bar { height: 100%; width: 0; background: var(--gradient); transition: width 0.2s ease; }
+.game-card { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
+.mono { font-family: Consolas, monospace; font-size: 11.5px; }

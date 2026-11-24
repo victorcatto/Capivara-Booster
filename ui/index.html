@@ -8,7 +8,57 @@
   <link rel="stylesheet" href="/src/styles/controls.css" />
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">CAPIVARA BOOSTER</div>
+          <div class="brand-version">v2.0.0 Rust Edition</div>
+        </div>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="dashboard">⚡ <span data-i18n="Nav_Dashboard">Painel Geral</span></button>
+        <button class="nav-item" data-view="debloat">🧹 <span data-i18n="Nav_Debloat">Remover Bloatware</span></button>
+        <button class="nav-item" data-view="cleaner">🧼 <span data-i18n="Nav_Cleaner">Limpar Cache</span></button>
+        <button class="nav-item" data-view="boost">🚀 <span data-i18n="Nav_SystemBoost">Latência</span></button>
+        <button class="nav-item" data-view="games">🎮 <span data-i18n="Nav_GameOptimizer">Otimizar Jogos</span></button>
+        <button class="nav-item" data-view="backup">🛡️ <span data-i18n="Nav_BackupRestore">Backup</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-block btn-sm" id="btn-check-updates" data-i18n="Nav_CheckUpdates">Verificar atualizações</button>
+        <div class="sidebar-status" style="margin-top:10px;">
+          <span class="dot"></span>
+          <div>
+            <div style="font-size:11px;font-weight:700;" data-i18n="App_AdminStatus">Modo Administrador Ativo</div>
+            <div style="font-size:10px;color:var(--text-muted);" data-i18n="App_RingStatus">Acesso Privilegiado</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <main class="app-main">
+      <div class="topbar">
+        <span style="font-size:12.5px;color:var(--text-secondary);" data-i18n="App_Subtitle">Otimizador de Sistema e Performance Esports</span>
+        <span class="topbar-spacer"></span>
+        <div class="lang-switch">
+          <button id="lang-pt" class="active">PT-BR</button>
+          <button id="lang-en">EN-US</button>
+        </div>
+        <div id="auth-area" style="display:flex;align-items:center;gap:8px;"></div>
+        <button class="btn btn-secondary btn-sm" id="btn-console-toggle" data-i18n="Console_Toggle">Mostrar / Ocultar Console</button>
+      </div>
+      <div class="content" id="view-host"></div>
+      <div class="console-panel" id="console-panel">
+        <div class="console-head">
+          <strong data-i18n="Console_Title">Console de Execução em Tempo Real</strong>
+          <span class="topbar-spacer"></span>
+          <button class="btn btn-secondary btn-sm" id="btn-console-clear" data-i18n="Console_Clear">Limpar</button>
+        </div>
+        <div id="console-list"></div>
+      </div>
+    </main>
+  </div>
+  <div class="modal-overlay" id="auth-modal"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

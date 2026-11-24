@@ -1,2 +1,10 @@
+pub mod auth;
+pub mod cleaner;
+pub mod debloat;
+pub mod games;
+pub mod i18n;
 pub mod process_executor;
 pub mod registry;
+pub mod restore;
+pub mod system_boost;
+pub mod update;

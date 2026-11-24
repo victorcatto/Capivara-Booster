@@ -12,11 +12,11 @@ pub struct ExecutionResult {
 pub struct ProcessExecutor;
 
 impl ProcessExecutor {
-    pub async fn execute_cmd(command: &str) -> ExecutionResult {
+    pub async fn execute_cmd(&self, command: &str) -> ExecutionResult {
         run("cmd.exe", &["/C", command]).await
     }
 
-    pub async fn execute_powershell(script: &str) -> ExecutionResult {
+    pub async fn execute_powershell(&self, script: &str) -> ExecutionResult {
         run(
             "powershell.exe",
             &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script],
@@ -25,18 +25,38 @@ impl ProcessExecutor {
 }
 
 async fn run(program: &str, args: &[&str]) -> ExecutionResult {
-    let mut child = Command::new(program)
+    let child = Command::new(program)
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
-        .expect("failed to spawn process");
+        .spawn();
 
-    let stdout = child.stdout.take().expect("stdout not captured");
-    let stderr = child.stderr.take().expect("stderr not captured");
+    let mut child = match child {
+        Ok(c) => c,
+        Err(e) => {
+            return ExecutionResult {
+                exit_code: -1,
+                stdout: String::new(),
+                stderr: format!("falha ao iniciar {program}: {e}"),
+            };
+        }
+    };
 
-    let stdout_task = tokio::spawn(collect(stdout));
-    let stderr_task = tokio::spawn(collect(stderr));
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+
+    let stdout_task = tokio::spawn(async move {
+        match stdout {
+            Some(s) => collect(s).await,
+            None => String::new(),
+        }
+    });
+    let stderr_task = tokio::spawn(async move {
+        match stderr {
+            Some(s) => collect(s).await,
+            None => String::new(),
+        }
+    });
 
     let status = child.wait().await;
     let out = stdout_task.await.unwrap_or_default();

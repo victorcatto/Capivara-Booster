@@ -27,13 +27,13 @@ impl SystemBoostService {
         } else {
             &["bcdedit /set useplatformclock true", "bcdedit /deletevalue useplatformtick", "bcdedit /deletevalue disabledynamictick"]
         };
-        for command in commands { self.executor.execute_cmd(command).await; }
+        for command in commands { executor.execute_cmd(command).await; }
         let ps = if disable {
             "Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction SilentlyContinue | Disable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue"
         } else {
             "Get-PnpDevice -FriendlyName '*High precision event timer*' -ErrorAction SilentlyContinue | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue"
         };
-        self.executor.execute_powershell(ps).await;
+        executor.execute_powershell(ps).await;
         Ok(true)
     }
 
@@ -41,10 +41,10 @@ impl SystemBoostService {
         let executor = ProcessExecutor;
         let result = executor.execute_cmd("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61").await;
         let guid = extract_guid(&result.stdout).unwrap_or_else(|| "e9a42b02-d5df-448d-aa00-03f14749eb61".into());
-        let active = self.executor.execute_cmd(&format!("powercfg /setactive {guid}")).await;
+        let active = executor.execute_cmd(&format!("powercfg /setactive {guid}")).await;
         if active.exit_code == 0 { Ok(guid) }
         else {
-            self.executor.execute_cmd("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c").await;
+            executor.execute_cmd("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c").await;
             Ok("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c".into())
         }
     }

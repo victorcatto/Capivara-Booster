@@ -38,6 +38,9 @@ backups_manifest.json
 *.log
 src/ApexOptimizer/
 
+## Nested legacy copy of the repo (orphan gitlink removed in cleanup)
+/Capivara-Booster/
+
 ## Windows System & OS Artifacts
 Thumbs.db
 ehthumbs.db

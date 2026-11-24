@@ -1,19 +1,19 @@
+import { invoke } from './tauri';
+
 type Strings = Record<string, string>;
 
 let current: Strings = {};
 let lang = 'pt-BR';
 
 export async function loadI18n(): Promise<void> {
-  const { invoke } = (window as any).__TAURI__.core;
-  const payload = await invoke('get_i18n');
+  const payload = await invoke<{ language: string; strings: Strings }>('get_i18n');
   current = payload.strings;
   lang = payload.language;
   document.documentElement.lang = lang;
 }
 
 export async function setLanguage(next: string): Promise<void> {
-  const { invoke } = (window as any).__TAURI__.core;
-  const payload = await invoke('set_language', { lang: next });
+  const payload = await invoke<{ language: string; strings: Strings }>('set_language', { lang: next });
   current = payload.strings;
   lang = payload.language;
   document.documentElement.lang = lang;

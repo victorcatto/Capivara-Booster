@@ -22,9 +22,30 @@ export async function renderBackup(host: HTMLElement): Promise<void> {
       <div id="backup-list"></div>
     </div>`;
 
-  // A lista de backups vem do manifest local; comando get_backups exposto quando necessário
+  const backups = await invoke<BackupRecord[]>('get_backups');
   const list = el<HTMLDivElement>('#backup-list');
-  if (list) list.innerHTML = `<p class="text-muted">${t('Backup_Empty', 'Nenhum backup criado ainda nesta máquina.')}</p>`;
+  if (list) {
+    if (backups.length === 0) {
+      list.innerHTML = `<p class="text-muted">${t('Backup_Empty', 'Nenhum backup criado ainda nesta máquina.')}</p>`;
+    } else {
+      list.innerHTML = backups.map((backup) => `
+        <div class="list-row">
+          <span></span>
+          <div><div class="name">${backup.name} <span class="text-muted">${backup.category}</span></div><div class="desc">${backup.description}</div><div class="desc mono">${backup.created_at}</div></div>
+          <button class="btn btn-secondary btn-sm" data-backup-id="${backup.id}">${t('Backup_Restore', 'Restaurar')}</button>
+        </div>`).join('');
+      list.querySelectorAll<HTMLButtonElement>('[data-backup-id]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          try {
+            await invoke('restore_backup', { backupId: button.dataset.backupId });
+            addLog(`✅ ${t('Backup_Restored', 'Backup restaurado')}: ${button.dataset.backupId}`);
+          } catch (error) {
+            addLog(`❌ ${String(error)}`);
+          }
+        });
+      });
+    }
+  }
 
   el<HTMLButtonElement>('#btn-restore-point')?.addEventListener('click', async () => {
     try {

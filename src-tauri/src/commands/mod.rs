@@ -223,6 +223,64 @@ pub async fn detect_game(state: State<'_, AppState>, game_id: String) -> Result<
 }
 
 #[tauri::command]
+pub async fn optimize_game(state: State<'_, AppState>, game_id: String, exe_path: String) -> Result<bool, String> {
+ let executor = ProcessExecutor;
+ match game_id.to_lowercase().as_str() {
+ "cs2" => {
+ let mut registry = state.registry.lock().unwrap();
+ GameOptimizerService::apply_priority_affinity(&mut registry, "cs2.exe", 3, true)?;
+ if !exe_path.is_empty() { GameOptimizerService::apply_app_compat(&mut registry, &exe_path)?; }
+ drop(registry);
+ if !exe_path.is_empty() {
+ let path = std::path::Path::new(&exe_path);
+ let cfg = path.parent().and_then(|p| p.ancestors().nth(3)).map(|p| p.join("csgo/cfg/autoexec.cfg")).ok_or("caminho de CS2 inválido")?;
+ if let Some(parent) = cfg.parent() { std::fs::create_dir_all(parent).map_err(|e| e.to_string())?; }
+ std::fs::write(&cfg, GameOptimizerService::generate_cs2_autoexec()).map_err(|e| e.to_string())?;
+ }
+ }
+ "valorant" => {
+ let script = {
+ let mut registry = state.registry.lock().unwrap();
+ GameOptimizerService::prepare_valorant(&mut registry, &exe_path)?
+ };
+ let result = executor.execute_powershell(&script).await;
+ if result.exit_code != 0 { return Err(result.stderr); }
+ }
+ "lol" => {
+ let script = {
+ let mut registry = state.registry.lock().unwrap();
+ let mut restore = state.restore.lock().unwrap();
+ GameOptimizerService::prepare_lol(&mut registry, &mut restore, &exe_path)?
+ };
+ let result = executor.execute_powershell(&script).await;
+ if result.exit_code != 0 { return Err(result.stderr); }
+ }
+ _ => return Err("jogo não suportado".into()),
+ }
+ log(&state, &format!("[Games] Perfil {game_id} aplicado"));
+ Ok(true)
+}
+
+#[tauri::command]
+pub async fn revert_game(state: State<'_, AppState>, game_id: String, exe_path: String) -> Result<usize, String> {
+ let mut registry = state.registry.lock().unwrap();
+ let mut restore = state.restore.lock().unwrap();
+ let restored = GameOptimizerService::revert_game(&mut registry, &mut restore, &game_id, &exe_path)?;
+ log(&state, &format!("[Games] Perfil {game_id} revertido"));
+ Ok(restored)
+}
+
+#[tauri::command]
+pub fn get_backups(state: State<AppState>) -> Vec<crate::models::BackupRecord> {
+ state.restore.lock().unwrap().get_backups().to_vec()
+}
+
+#[tauri::command]
+pub fn restore_backup(state: State<AppState>, backup_id: String) -> Result<bool, String> {
+ state.restore.lock().unwrap().restore_file(&backup_id)
+}
+
+#[tauri::command]
 pub async fn generate_cs2_autoexec(state: State<'_, AppState>, cs2_exe_path: String) -> Result<String, String> {
  let path = std::path::Path::new(&cs2_exe_path);
  let cfg_dir = path

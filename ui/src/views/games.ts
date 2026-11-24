@@ -36,12 +36,7 @@ export async function renderGames(host: HTMLElement): Promise<void> {
       btn.disabled = true;
       try {
         addLog(`🎮 ${game.name}: ${t('Game_Optimizing', 'aplicando perfil competitivo...')}`);
-        if (game.id === 'cs2') {
-          await invoke('generate_cs2_autoexec', { cs2ExePath: detection.executable_path });
-          addLog('✅ autoexec.cfg gerado');
-        } else if (game.id === 'valorant') {
-          await invoke('apply_system_optimizations');
-        }
+        await invoke('optimize_game', { gameId: game.id, exePath: detection.executable_path });
         addLog(`✅ ${game.name} ${t('Game_Optimized', 'otimizado')}`);
       } catch (err) {
         addLog('❌ ' + String(err));

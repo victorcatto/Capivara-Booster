@@ -22,6 +22,13 @@ impl RestoreService {
 
  pub fn get_backups(&self) -> &[BackupRecord] { &self.backups }
 
+ pub fn restore_category(&mut self, category: &str) -> Result<usize, String> {
+ let ids: Vec<String> = self.backups.iter().filter(|b| b.category.eq_ignore_ascii_case(category)).map(|b| b.id.clone()).collect();
+ let mut restored = 0;
+ for id in ids { if self.restore_file(&id)? { restored += 1; } }
+ Ok(restored)
+ }
+
  pub fn backup_file(&mut self, source: &str, category: &str, description: &str) -> Result<Option<BackupRecord>, String> {
  let src = PathBuf::from(source);
  if !src.exists() { return Ok(None); }

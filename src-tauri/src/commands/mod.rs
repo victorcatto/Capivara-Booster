@@ -119,8 +119,11 @@ pub fn get_bloatware_items(state: State<AppState>) -> Vec<BloatwareItem> {
 
 #[tauri::command]
 pub async fn clean_item(state: State<'_, AppState>, item_id: String, target_path: String) -> Result<CleaningSummary, String> {
+ let (bytes, count, errors) = {
  let cleaner = state.cleaner.lock().unwrap();
- let (bytes, count, errors) = cleaner.clean_directory_contents(&target_path)?;
+ cleaner.clean_directory_contents(&target_path)?
+ };
+ log(&state, &format!("[Cleaner] {item_id}: {count} arquivos, {errors} erros"));
  Ok(CleaningSummary { total_bytes_cleaned: bytes, files_deleted: count, errors_count: errors })
 }
 
@@ -134,8 +137,10 @@ pub async fn flush_dns(state: State<'_, AppState>) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn apply_system_optimizations(state: State<'_, AppState>) -> Result<bool, String> {
+ let result = {
  let mut boost = state.boost.lock().unwrap();
- let result = boost.apply_optimizations().await;
+ boost.apply_optimizations()
+ };
  match &result {
  Ok(_) => log(&state, "[Boost] Otimizações aplicadas"),
  Err(e) => log(&state, &format!("[Boost Erro] {e}")),
@@ -145,8 +150,12 @@ pub async fn apply_system_optimizations(state: State<'_, AppState>) -> Result<bo
 
 #[tauri::command]
 pub async fn revert_system_optimizations(state: State<'_, AppState>) -> Result<bool, String> {
+ let result = {
  let mut boost = state.boost.lock().unwrap();
- boost.revert_optimizations().await
+ boost.revert_optimizations()
+ };
+ log(&state, "[Boost] Ajustes revertidos ao padrão");
+ result
 }
 
 #[tauri::command]

@@ -227,7 +227,7 @@ pub async fn generate_cs2_autoexec(state: State<'_, AppState>, cs2_exe_path: Str
 pub async fn get_startup_items(state: State<'_, AppState>) -> Result<Vec<StartupItem>, String> {
  let mut items = Vec::new();
  if let Ok(key) = winreg::RegKey::predef(HKCU).open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Run") {
- for name in key.enum_values().flatten() {
+ for (name, _value) in key.enum_values().flatten() {
  if let Ok(v) = key.get_value::<String, _>(&name) {
  items.push(StartupItem { name, path: v, location: "HKCU Run".into() });
  }

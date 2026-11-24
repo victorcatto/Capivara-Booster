@@ -13,7 +13,7 @@ fn steam_candidates(cs2: &Path) -> Vec<PathBuf> {
 impl GameOptimizerService {
  pub fn new() -> Self { Self }
 
- pub async fn detect_game(&self, game_id: &str, reg: &RegistryService) -> GameDetectionResult {
+ pub fn detect_game(&self, game_id: &str, reg: &RegistryService) -> GameDetectionResult {
  match game_id.to_lowercase().as_str() {
  "cs2" => self.detect_cs2(reg),
  "valorant" => self.detect_valorant(),

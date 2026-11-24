@@ -1,4 +1,5 @@
 use winreg::enums::*;
+use winreg::types::HKEY;
 use winreg::RegKey;
 
 pub struct RegistryService;

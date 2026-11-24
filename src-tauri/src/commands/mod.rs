@@ -119,10 +119,26 @@ pub fn get_bloatware_items(state: State<AppState>) -> Vec<BloatwareItem> {
 
 #[tauri::command]
 pub async fn clean_item(state: State<'_, AppState>, item_id: String, target_path: String) -> Result<CleaningSummary, String> {
+ let executor = ProcessExecutor;
+ if item_id == "dns" {
+  let result = executor.execute_cmd("ipconfig /flushdns").await;
+  log(&state, "[Cleaner] Cache DNS limpo");
+  return Ok(CleaningSummary { total_bytes_cleaned: 0, files_deleted: if result.exit_code == 0 { 1 } else { 0 }, errors_count: if result.exit_code == 0 { 0 } else { 1 } });
+ }
+ if item_id == "recycle_bin" {
+  let result = executor.execute_powershell("Clear-RecycleBin -Force -ErrorAction SilentlyContinue").await;
+  log(&state, "[Cleaner] Lixeira esvaziada");
+  return Ok(CleaningSummary { total_bytes_cleaned: 0, files_deleted: if result.exit_code == 0 { 1 } else { 0 }, errors_count: if result.exit_code == 0 { 0 } else { 1 } });
+ }
+ if item_id == "windows_update" {
+  executor.execute_cmd("net stop wuauserv").await;
+ }
  let (bytes, count, errors) = {
- let cleaner = state.cleaner.lock().unwrap();
- cleaner.clean_directory_contents(&target_path)?
+  let cleaner = state.cleaner.lock().unwrap();
+  let result = cleaner.clean_directory_contents(&target_path)?;
+  result
  };
+ if item_id == "windows_update" { executor.execute_cmd("net start wuauserv").await; }
  log(&state, &format!("[Cleaner] {item_id}: {count} arquivos, {errors} erros"));
  Ok(CleaningSummary { total_bytes_cleaned: bytes, files_deleted: count, errors_count: errors })
 }
@@ -226,7 +242,9 @@ pub async fn disable_telemetry(state: State<'_, AppState>) -> Result<bool, Strin
  let executor = ProcessExecutor;
  let services = "foreach ($svc in @('DiagTrack','dmwappushservice','diagnosticshub.standardcollector.service')) { Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue; Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue }";
  executor.execute_powershell(services).await;
- log(&state, "[Debloat] Telemetria e serviços de diagnóstico desativados");
+ let debloat = crate::services::debloat::DebloatService::new();
+ debloat.disable_scheduled_telemetry_tasks().await?;
+ log(&state, "[Debloat] Telemetria, serviços e tarefas de diagnóstico desativados");
  Ok(true)
 }
 

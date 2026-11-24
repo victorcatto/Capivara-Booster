@@ -2,9 +2,9 @@ name: Build & Validate Rust (Tauri v2)
 
 on:
   push:
-    branches: [rust]
-  pull_request:
     branches: [main, rust]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:

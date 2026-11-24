@@ -1,0 +1,134 @@
+name: Build & Release Capivara Booster (Rust)
+
+on:
+  push:
+    tags:
+      - 'v2.*'
+      - 'v3.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to release (e.g. 2.0.0)'
+        required: true
+        default: '2.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $ver = "${{ github.event.inputs.version }}".TrimStart('v','V')
+          } else {
+            $ver = "${{ github.ref_name }}".TrimStart('v','V')
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_ENV
+          echo "Tag: v$ver"
+
+      - name: Sync Rust Version With Tag
+        working-directory: src-tauri
+        shell: pwsh
+        run: |
+          (Get-Content Cargo.toml) -replace '^version = ".*"', 'version = "${{ env.VERSION }}"' | Set-Content Cargo.toml
+          $conf = Get-Content -Raw tauri.conf.json | ConvertFrom-Json
+          $conf.version = "${{ env.VERSION }}"
+          $conf | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Frontend (UI)
+        working-directory: ui
+        run: |
+          npm install
+          npm run build
+
+      - name: Run Rust Tests
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build and Bundle NSIS Installer
+        working-directory: src-tauri
+        run: cargo tauri build --bundles nsis
+
+      - name: Prepare Release Assets
+        shell: pwsh
+        run: |
+          $nsis = Get-ChildItem "src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
+          if (-not $nsis) { Write-Error "NSIS installer was not generated" }
+
+          $outDir = "./publish/installer"
+          New-Item -ItemType Directory -Force $outDir | Out-Null
+
+          # Nomes esperados pelo auto-updater da v1 e pelo download direto dos READMEs
+          $versioned = Join-Path $outDir "CapivaraBooster-Setup-v${{ env.VERSION }}.exe"
+          $direct = Join-Path $outDir "CapivaraBooster-Setup.exe"
+          Copy-Item $nsis.FullName $versioned -Force
+          Copy-Item $nsis.FullName $direct -Force
+
+          $hash = (Get-FileHash $versioned -Algorithm SHA256).Hash
+          echo "INSTALLER_PATH=$versioned" >> $env:GITHUB_ENV
+          echo "DIRECT_INSTALLER_PATH=$direct" >> $env:GITHUB_ENV
+          Write-Host "Versioned: $(Split-Path $versioned -Leaf) ($([math]::Round((Get-Item $versioned).Length / 1MB, 2)) MB)"
+          Write-Host "SHA256: $hash"
+
+          # Atualiza version.json com o contrato do updater (mesmos campos da v1)
+          $manifest = Get-Content -Raw version.json | ConvertFrom-Json
+          $manifest.version = "${{ env.VERSION }}"
+          $manifest.releaseDate = (Get-Date).ToString("yyyy-MM-dd")
+          $manifest.sha256 = $hash
+          $manifest.installerUrl = "https://github.com/victorcatto/Capivara-Booster/releases/download/v${{ env.VERSION }}/CapivaraBooster-Setup-v${{ env.VERSION }}.exe"
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content version.json
+          echo "MANIFEST_UPDATED=true" >> $env:GITHUB_ENV
+
+      - name: Commit Updated Manifest Back To Default Branch
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") { $branch = "${{ github.ref_name }}" }
+          else { $branch = (git branch -r --contains HEAD | Select-String -Pattern 'origin/(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1) }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          if (git diff --cached --quiet) { Write-Host "Manifest unchanged"; exit 0 }
+          git commit -m "chore(release): atualiza version.json para v${{ env.VERSION }}"
+          git push origin "HEAD:$branch"
+
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: "Capivara Booster v${{ env.VERSION }} (Rust Edition)"
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.INSTALLER_PATH }}
+            ${{ env.DIRECT_INSTALLER_PATH }}
+            version.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

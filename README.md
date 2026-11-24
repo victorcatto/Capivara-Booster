@@ -17,7 +17,7 @@
 
 Capivara Booster is an open-source Windows utility for competitive gamers and power users. It combines system cleanup, privacy controls, latency tuning, game-specific profiles, configuration backups, and rollback in one administrator-controlled desktop application.
 
-The stable Windows release is currently the .NET 8/WPF edition. The Rust/Tauri v2 edition is being developed separately on the `rust` branch and will only replace the stable edition after functional parity and installer validation.
+The application is built natively in **Rust** with **Tauri v2**: a single lightweight executable, no .NET runtime dependency, direct Windows Registry access, and a modern dark web-based UI.
 
 ## Download
 
@@ -29,7 +29,7 @@ See the [release history](https://github.com/victorcatto/Capivara-Booster/releas
 
 - Windows 10 or Windows 11, 64-bit
 - Administrator permission for system and registry changes
-- .NET 8 Desktop Runtime for the current stable WPF edition
+- WebView2 Runtime (preinstalled on up-to-date Windows 10/11)
 
 Windows SmartScreen may display a warning because the open-source installer is not code-signed. Verify the release asset and SHA-256 checksum before running it.
 
@@ -87,31 +87,32 @@ Always review an optimization before applying it. Hardware, Windows edition, dri
 git clone https://github.com/victorcatto/Capivara-Booster.git
 Set-Location Capivara-Booster
 
-# Stable WPF edition
-dotnet restore CapivaraBooster.sln
-dotnet build CapivaraBooster.sln -c Release
+# Frontend
+Set-Location ui
+npm install
+npm run build
 
-# Rust/Tauri v2 development branch
-Set-Location src-tauri
+# Backend Rust + instalador NSIS
+Set-Location ..\src-tauri
 cargo check
 cargo test
+cargo tauri build --bundles nsis
 ```
 
-The Rust branch requires the Rust stable toolchain, the Windows MSVC build tools, Node.js, and the Tauri CLI. Its CI runs on `windows-latest` and validates the frontend, Rust compilation, tests, and NSIS bundle.
+Building requires the Rust stable toolchain, the Windows MSVC build tools, Node.js, and the Tauri CLI. CI runs on `windows-latest` and validates the frontend, Rust compilation, tests, and the NSIS bundle.
 
 ## Architecture
 
-- Stable edition: C#/.NET 8, WPF, MVVM, Windows Registry and PowerShell integrations
-- Migration edition: Rust, Tauri v2, TypeScript frontend, `winreg`, `windows-rs`, Tokio, DPAPI, and GitHub update compatibility
-- Release pipeline: GitHub Actions with Windows build runners and NSIS packaging
-
-Read the [Rust migration blueprint](docs/RUST_MIGRATION_BLUEPRINT.md) for the transition roadmap.
+- Backend: Rust with Tokio, `winreg`, `windows-rs`, DPAPI (vault/session), SHA-256 update verification, and `serde_json`
+- Frontend: TypeScript with Vite, dark cyberpunk theme, runtime PT-BR/EN-US switching
+- Packaging: Tauri v2 NSIS installer, per-machine install mode, requireAdministrator manifest
+- Release pipeline: GitHub Actions with Windows build runners
 
 ## Project status
 
-- `main`: stable WPF edition and production release pipeline
-- `rust`: active migration, feature parity, security review, and installer validation
-- v2.0.0 will be released only after the parity checklist, clean installer upgrade, and end-to-end verification pass
+- Single development tree: all feature work lands on `main`
+- Release tags `v2.*` and later build the Rust edition via GitHub Actions
+- The v1.x WPF installers remain available on the Releases page for existing installs, and the Rust updater keeps the same `version.json` contract so old clients can still upgrade
 
 ## License
 

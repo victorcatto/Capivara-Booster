@@ -146,7 +146,7 @@ fn dpapi_protect(input: &[u8]) -> Result<Vec<u8>, String> {
         CryptProtectData(&mut input_blob, None, None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut output_blob)
             .map_err(|e| format!("DPAPI ProtectData falhou: {e}"))?;
         let output = std::slice::from_raw_parts(output_blob.pbData, output_blob.cbData as usize).to_vec();
-        let _ = windows::Win32::System::Memory::LocalFree(windows::Win32::Foundation::HLOCAL(output_blob.pbData as *mut _));
+        let _ = windows::Win32::Foundation::LocalFree(windows::Win32::Foundation::HLOCAL(output_blob.pbData as *mut _));
         Ok(output)
     }
 }
@@ -158,7 +158,7 @@ fn dpapi_unprotect(input: &[u8]) -> Result<Vec<u8>, String> {
         CryptUnprotectData(&mut input_blob, None, None, None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut output_blob)
             .map_err(|e| format!("DPAPI UnprotectData falhou: {e}"))?;
         let output = std::slice::from_raw_parts(output_blob.pbData, output_blob.cbData as usize).to_vec();
-        let _ = windows::Win32::System::Memory::LocalFree(windows::Win32::Foundation::HLOCAL(output_blob.pbData as *mut _));
+        let _ = windows::Win32::Foundation::LocalFree(windows::Win32::Foundation::HLOCAL(output_blob.pbData as *mut _));
         Ok(output)
     }
 }

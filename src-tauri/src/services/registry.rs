@@ -1,5 +1,5 @@
-use winreg::enums::{HKEY, KEY_SET_VALUE};
-use winreg::RegKey;
+use winreg::enums::KEY_SET_VALUE;
+use winreg::{HKEY, RegKey};
 
 pub struct RegistryService;
 

@@ -125,7 +125,7 @@ capivara-booster/
 - [ ] **Marco**: paridade funcional dos 6 módulos (checklist item a item contra o app v1.1.4).
 
 ### Fase 3 — Auth + Updater (2–3 dias)
-- [ ] Portar `AuthService`: vault DPAPI (`CryptProtectData`), PBKDF2-100k, regra de admin único `victorcatto93@gmail.com`, domínios permitidos.
+- [ ] Portar `AuthService`: vault DPAPI (`CryptProtectData`), PBKDF2-100k, regra interna de administrador único, sem expor o identificador confidencial, domínios permitidos.
 - [ ] Integrar `tauri-plugin-updater` apontando para o `version.json` do branch `main` (mesmo formato; campo extra `signature` se usar assinatura Tauri).
 - [ ] **Marco**: login/registro + auto-update funcional no formato atual.
 

@@ -11,15 +11,17 @@ impl SystemBoostService {
         Self { registry: RegistryService::new(), executor: ProcessExecutor }
     }
 
-    pub async fn is_hpet_disabled(&self) -> bool {
-        let result = self.executor.execute_cmd("bcdedit /enum {current}").await;
+    pub async fn is_hpet_disabled() -> bool {
+        let executor = ProcessExecutor;
+        let result = executor.execute_cmd("bcdedit /enum {current}").await;
         let clock_disabled = result.stdout.contains("useplatformclock        No")
             || !result.stdout.to_ascii_lowercase().contains("useplatformclock");
         let tick_active = result.stdout.contains("useplatformtick         Yes");
         clock_disabled && tick_active
     }
 
-    pub async fn set_hpet_state(&self, disable: bool) -> Result<bool, String> {
+    pub async fn set_hpet_state(disable: bool) -> Result<bool, String> {
+        let executor = ProcessExecutor;
         let commands: &[&str] = if disable {
             &["bcdedit /deletevalue useplatformclock", "bcdedit /set useplatformclock false", "bcdedit /set useplatformtick yes", "bcdedit /set disabledynamictick yes"]
         } else {
@@ -35,8 +37,9 @@ impl SystemBoostService {
         Ok(true)
     }
 
-    pub async fn enable_ultimate_performance(&self) -> Result<String, String> {
-        let result = self.executor.execute_cmd("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61").await;
+    pub async fn enable_ultimate_performance() -> Result<String, String> {
+        let executor = ProcessExecutor;
+        let result = executor.execute_cmd("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61").await;
         let guid = extract_guid(&result.stdout).unwrap_or_else(|| "e9a42b02-d5df-448d-aa00-03f14749eb61".into());
         let active = self.executor.execute_cmd(&format!("powercfg /setactive {guid}")).await;
         if active.exit_code == 0 { Ok(guid) }

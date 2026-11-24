@@ -71,7 +71,7 @@ Windows SmartScreen may display a warning because the open-source installer is n
 - Local account vault protected by Windows DPAPI
 - PBKDF2-HMAC-SHA256 password derivation with random salts
 - Registration restricted to Gmail, Outlook, Yahoo, and Yahoo Brasil domains
-- Single administrator identity: `victorcatto93@gmail.com`
+- Single administrator identity enforced internally and never exposed in the UI
 - GitHub-based update manifest with SHA-256 verification
 - Live execution console hidden by default and available with a toggle
 

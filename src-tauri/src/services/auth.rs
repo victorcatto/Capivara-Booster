@@ -10,7 +10,7 @@ use windows::Win32::Security::Cryptography::{
 };
 use crate::services::registry::dirs_roaming_data;
 
-const MASTER_ADMIN_EMAIL: &str = "victorcatto93@gmail.com";
+const MASTER_ADMIN_EMAIL_HASH: &str = "7be2176cae040076deaf378728a219a8fd604850e6b521e83e13e324c1d4ecf9";
 const ALLOWED_DOMAINS: [&str; 4] = ["@gmail.com", "@outlook.com", "@yahoo.com.br", "@yahoo.com"];
 const PBKDF2_ITERATIONS: u32 = 100_000;
 
@@ -63,7 +63,7 @@ impl AuthService {
         rand::thread_rng().fill_bytes(&mut salt);
         let mut hash = [0u8; 32];
         pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, PBKDF2_ITERATIONS, &mut hash);
-        let role = if normalized.eq_ignore_ascii_case(MASTER_ADMIN_EMAIL) { "Admin" } else { "StandardUser" };
+        let role = if is_master_admin(&normalized) { "Admin" } else { "StandardUser" };
         vault.insert(normalized.clone(), format!("{}:{}:{}", hex(&salt), hex(&hash), role));
         self.save_vault(&vault)?;
         self.login(&normalized, password)
@@ -86,7 +86,7 @@ impl AuthService {
         pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, PBKDF2_ITERATIONS, &mut actual);
         if !constant_time_eq(&actual, &expected) { return Err("senha incorreta".into()); }
 
-        let role = if normalized.eq_ignore_ascii_case(MASTER_ADMIN_EMAIL) { "Admin" } else { stored_role };
+        let role = if is_master_admin(&normalized) { "Admin" } else { stored_role };
         let user = UserAccount {
             email: normalized.clone(),
             display_name: normalized.split('@').next().unwrap_or("user").to_string(),
@@ -110,7 +110,7 @@ impl AuthService {
         let Ok(user) = serde_json::from_slice::<UserAccount>(&plain) else { return };
         if !Self::is_domain_allowed(&user.email) { return; }
         let mut user = user;
-        if user.role == "Admin" && !user.email.eq_ignore_ascii_case(MASTER_ADMIN_EMAIL) {
+        if user.role == "Admin" && !is_master_admin(&user.email) {
             user.role = "StandardUser".into();
         }
         self.current = Some(user);
@@ -168,6 +168,14 @@ fn hex(bytes: &[u8]) -> String { bytes.iter().map(|b| format!("{b:02x}")).collec
 fn decode_hex(value: &str) -> Result<Vec<u8>, String> {
     if value.len() % 2 != 0 { return Err("registro de credencial corrompido".into()); }
     (0..value.len()).step_by(2).map(|i| u8::from_str_radix(&value[i..i + 2], 16).map_err(|_| "registro de credencial corrompido".into())).collect()
+}
+
+fn is_master_admin(email: &str) -> bool {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(email.trim().to_lowercase().as_bytes());
+    let actual = hex(&hasher.finalize());
+    actual.eq_ignore_ascii_case(MASTER_ADMIN_EMAIL_HASH)
 }
 
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {

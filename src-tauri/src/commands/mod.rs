@@ -136,6 +136,25 @@ pub async fn flush_dns(state: State<'_, AppState>) -> Result<bool, String> {
 }
 
 #[tauri::command]
+pub async fn get_hpet_status(_state: State<'_, AppState>) -> Result<bool, String> {
+ Ok(crate::services::system_boost::SystemBoostService::is_hpet_disabled().await)
+}
+
+#[tauri::command]
+pub async fn set_hpet_state(state: State<'_, AppState>, disable: bool) -> Result<bool, String> {
+ let result = crate::services::system_boost::SystemBoostService::set_hpet_state(disable).await;
+ log(&state, if disable { "[HPET] Desativado" } else { "[HPET] Restaurado" });
+ result
+}
+
+#[tauri::command]
+pub async fn enable_ultimate_performance(state: State<'_, AppState>) -> Result<String, String> {
+ let result = crate::services::system_boost::SystemBoostService::enable_ultimate_performance().await;
+ if let Ok(ref guid) = result { log(&state, &format!("[Power Plan] Ativo: {guid}")); }
+ result
+}
+
+#[tauri::command]
 pub async fn apply_system_optimizations(state: State<'_, AppState>) -> Result<bool, String> {
  let result = {
  let mut boost = state.boost.lock().unwrap();

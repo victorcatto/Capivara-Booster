@@ -28,6 +28,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::get_logs,
             commands::clear_logs,
+            commands::get_hpet_status,
+            commands::set_hpet_state,
+            commands::enable_ultimate_performance,
             commands::get_auth_state,
             commands::login,
             commands::register,

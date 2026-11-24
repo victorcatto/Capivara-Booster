@@ -71,7 +71,7 @@ O Windows SmartScreen pode exibir um aviso porque o instalador open source não 
 - Cofre de contas local protegido pelo Windows DPAPI
 - Derivação de senha PBKDF2-HMAC-SHA256 com salt aleatório
 - Cadastro restrito a Gmail, Outlook, Yahoo e Yahoo Brasil
-- Identidade única de administrador: `victorcatto93@gmail.com`
+- Identidade única de administrador protegida internamente e não exposta na interface
 - Manifesto de atualização no GitHub com verificação SHA-256
 - Console de execução oculto por padrão e disponível por botão
 

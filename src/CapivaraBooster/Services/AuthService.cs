@@ -8,7 +8,7 @@ namespace CapivaraBooster.Services;
 
 public class AuthService : IAuthService
 {
-    private const string MasterAdminEmail = "victorcatto93@gmail.com";
+    private const string MasterAdminEmailHash = "7be2176cae040076deaf378728a219a8fd604850e6b521e83e13e324c1d4ecf9";
 
     private static readonly string[] AllowedDomains =
     {
@@ -109,8 +109,8 @@ public class AuthService : IAuthService
                 string saltHex = Convert.ToHexString(salt);
                 string hashHex = Convert.ToHexString(hash);
 
-                // 4. Role Assignment: STRICTLY victorcatto93@gmail.com is granted Admin
-                var role = string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase)
+                // Role assignment uses a private deterministic administrator identity hash
+                var role = IsMasterAdmin(normalizedEmail)
                     ? UserRole.Admin
                     : UserRole.StandardUser;
 
@@ -153,7 +153,7 @@ public class AuthService : IAuthService
                 var vault = LoadVault();
 
                 // Master admin bootstrapping if vault does not contain master record yet
-                if (string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase) && !vault.ContainsKey(normalizedEmail))
+                if (IsMasterAdmin(normalizedEmail) && !vault.ContainsKey(normalizedEmail))
                 {
                     byte[] salt = RandomNumberGenerator.GetBytes(16);
                     byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
@@ -197,8 +197,8 @@ public class AuthService : IAuthService
                         : "Incorrect password.");
                 }
 
-                // Verify Single Admin rule: ONLY victorcatto93@gmail.com receives Admin
-                UserRole assignedRole = (roleVal == (int)UserRole.Admin && string.Equals(normalizedEmail, MasterAdminEmail, StringComparison.OrdinalIgnoreCase))
+                // Verify the private single-administrator rule
+                UserRole assignedRole = (roleVal == (int)UserRole.Admin && IsMasterAdmin(normalizedEmail))
                     ? UserRole.Admin
                     : UserRole.StandardUser;
 
@@ -270,7 +270,7 @@ public class AuthService : IAuthService
                 if (user != null && IsDomainAllowed(user.Email))
                 {
                     // Strictly enforce single admin rule on session restore
-                    if (user.Role == UserRole.Admin && !string.Equals(user.Email, MasterAdminEmail, StringComparison.OrdinalIgnoreCase))
+                    if (user.Role == UserRole.Admin && !IsMasterAdmin(user.Email))
                     {
                         user.Role = UserRole.StandardUser;
                     }
@@ -297,6 +297,13 @@ public class AuthService : IAuthService
         catch { }
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsMasterAdmin(string email)
+    {
+        using var sha = SHA256.Create();
+        string hash = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant()))).ToLowerInvariant();
+        return string.Equals(hash, MasterAdminEmailHash, StringComparison.OrdinalIgnoreCase);
     }
 
     private void SaveVault(Dictionary<string, string> vault)

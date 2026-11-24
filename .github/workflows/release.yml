@@ -3,7 +3,7 @@ name: Build & Release Capivara Booster
 on:
   push:
     tags:
-      - 'v*'
+      - 'v1.*'
   workflow_dispatch:
     inputs:
       version:

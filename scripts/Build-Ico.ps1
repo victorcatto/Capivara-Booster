@@ -39,12 +39,8 @@ try {
         $g.Dispose()
 
         $frameMs = New-Object System.IO.MemoryStream
-        if ($s -ge 256) {
-            # 256px frames should be PNG-compressed per Vista+ icon spec
-            $bmp.Save($frameMs, [System.Drawing.Imaging.ImageFormat]::Png)
-        } else {
-            $bmp.Save($frameMs, [System.Drawing.Imaging.ImageFormat]::Bmp)
-        }
+        # PNG-embedded frames (Vista+): aceito por tauri-build/RC sem "old DIB"
+        $bmp.Save($frameMs, [System.Drawing.Imaging.ImageFormat]::Png)
         $pngFrames[$s] = $frameMs.ToArray()
         $bmp.Dispose()
     }

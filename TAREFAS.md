@@ -3,7 +3,9 @@
 ## Em andamento
 - Validar a compilação Rust/Tauri v2 e o instalador NSIS no GitHub Actions.
 - Auditar a paridade funcional com a versão WPF v1.1.4 antes de publicar a v2.0.0.
-- Atualizar a descrição do repositório e os READMEs com texto profissional, factual e alinhado à versão estável publicada.
+- Executar testes de integração em Windows para Registro, DPAPI, ponto de restauração, PowerShell, Defender, HPET e instalador.
+- Testar atualização real de uma instalação v1.1.4 para o instalador Rust, usando o mesmo contrato `version.json` e os dois nomes de asset.
+- Definir assinatura de código e política do SmartScreen antes da distribuição pública.
 
 ## Após paridade e lançamento Rust
 - Remover os resquícios do projeto WPF/.NET: solução e fontes C#, XAML, workflow .NET/Inno Setup, scripts antigos e configuração obsoleta.
@@ -20,6 +22,6 @@
   - Validar contraste, estados de foco, responsividade e PT-BR/EN-US.
 
 ## Dependências
-- **Depende do Victor:** nenhuma para esta etapa.
-- **Depende do Claude:** concluir auditoria, validação e lançamento seguro da v2.0.0.
-- **Depende de outra pessoa:** assinatura de código, se desejada para reduzir o aviso do SmartScreen.
+- **Depende do Victor:** fornecer certificado de assinatura, se desejar reduzir o aviso do SmartScreen; disponibilizar uma máquina Windows de teste com instalação v1.1.4 para o upgrade real.
+- **Depende do Claude:** concluir auditoria, validação e lançamento seguro da v2.0.0; integrar as branches e remover o WPF depois da aprovação técnica.
+- **Depende de outra pessoa:** nenhuma além da autoridade certificadora, caso seja usada assinatura de código.

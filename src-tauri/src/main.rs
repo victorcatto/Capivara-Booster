@@ -53,6 +53,7 @@ fn main() {
             commands::generate_cs2_autoexec,
             commands::get_startup_items,
             commands::check_updates,
+            commands::apply_update,
             commands::get_i18n,
             commands::set_language
         ])

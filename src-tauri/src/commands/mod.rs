@@ -360,7 +360,7 @@ pub struct UpdateCheckPayload {
 #[tauri::command]
 pub async fn check_updates(state: State<'_, AppState>) -> Result<UpdateCheckPayload, String> {
  let updater = UpdateService::new();
- let result = updater.check_for_updates("2.0.0").await;
+ let result = updater.check_for_updates(env!("CARGO_PKG_VERSION")).await;
  match result {
  Ok(Some(m)) => {
  log(&state, &format!("[Updater] Nova versão disponível: {}", m.version));
@@ -369,7 +369,7 @@ pub async fn check_updates(state: State<'_, AppState>) -> Result<UpdateCheckPayl
  version: Some(m.version),
  title: Some(m.title),
  changelog: Some(m.changelog),
- installer_url: Some(m.installerUrl),
+ installer_url: Some(m.installer_url),
  sha256: Some(m.sha256),
  })
  }
@@ -382,6 +382,23 @@ pub async fn check_updates(state: State<'_, AppState>) -> Result<UpdateCheckPayl
  Err(e)
  }
  }
+}
+
+#[tauri::command]
+pub async fn apply_update(state: State<'_, AppState>, version: String, installer_url: String, sha256: String) -> Result<bool, String> {
+ let updater = UpdateService::new();
+ let manifest = crate::services::update::VersionManifest {
+  version,
+  release_date: String::new(),
+  title: String::new(),
+  changelog: String::new(),
+  installer_url,
+  sha256,
+  mandatory: false,
+ };
+ updater.download_and_apply(&manifest).await?;
+ log(&state, "[Updater] Instalador baixado e iniciado");
+ Ok(true)
 }
 
 #[derive(Serialize)]

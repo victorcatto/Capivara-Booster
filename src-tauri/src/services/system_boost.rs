@@ -1,5 +1,5 @@
 use crate::services::registry::{HKLM, HKCU, RegistryService};
-use crate::commands::ProcessExecutor;
+use crate::services::process_executor::ProcessExecutor;
 
 pub struct SystemBoostService {
  registry: RegistryService,

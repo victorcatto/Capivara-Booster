@@ -4,7 +4,7 @@ use serde_json::Value;
 use crate::services::registry::dirs_roaming_data;
 
 pub struct I18nService {
- strings: HashMap<String, String>,
+ pub strings: HashMap<String, String>,
  pub current_language: String,
  settings_path: PathBuf,
 }

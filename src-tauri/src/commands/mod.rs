@@ -198,9 +198,11 @@ pub async fn disable_telemetry(state: State<'_, AppState>) -> Result<bool, Strin
 
 #[tauri::command]
 pub async fn detect_game(state: State<'_, AppState>, game_id: String) -> Result<GameDetectionResult, String> {
+ let result = {
  let registry = state.registry.lock().unwrap();
  let games = GameOptimizerService::new();
- let result = games.detect_game(&game_id, &registry);
+ games.detect_game(&game_id, &registry)
+ };
  log(&state, &format!("[Detection] {}: {}", game_id, if result.found { "encontrado" } else { "não encontrado" }));
  Ok(result)
 }
@@ -223,7 +225,6 @@ pub async fn generate_cs2_autoexec(state: State<'_, AppState>, cs2_exe_path: Str
 
 #[tauri::command]
 pub async fn get_startup_items(state: State<'_, AppState>) -> Result<Vec<StartupItem>, String> {
- let registry = state.registry.lock().unwrap();
  let mut items = Vec::new();
  if let Ok(key) = winreg::RegKey::predef(HKCU).open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Run") {
  for name in key.enum_values().flatten() {

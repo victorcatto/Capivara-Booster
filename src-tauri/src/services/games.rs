@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use crate::models::GameDetectionResult;
 use crate::services::registry::{HKCU, HKLM, RegistryService};
-use crate::commands::ProcessExecutor;
+use crate::services::process_executor::ProcessExecutor;
 
 pub struct GameOptimizerService;
 

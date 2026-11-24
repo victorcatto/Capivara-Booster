@@ -44,14 +44,17 @@ jobs:
         working-directory: src-tauri
         run: cargo test
 
-      - name: Build Release Binary
-        working-directory: src-tauri
-        run: cargo build --release
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
 
-      - name: Validate Binary Exists
+      - name: Build and Bundle Rust Installer
+        working-directory: src-tauri
+        run: cargo tauri build --bundles nsis
+
+      - name: Validate Installer Exists
         shell: pwsh
         run: |
-          $exe = "src-tauri/target/release/capivara-booster.exe"
-          if (-not (Test-Path $exe)) { Write-Error "Binary not found: $exe" }
-          $size = (Get-Item $exe).Length / 1MB
-          Write-Host "Binary size: $([math]::Round($size, 2)) MB"
+          $installer = Get-ChildItem "src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
+          if (-not $installer) { Write-Error "NSIS installer was not generated" }
+          $size = $installer.Length / 1MB
+          Write-Host "Installer: $($installer.Name) ($([math]::Round($size, 2)) MB)"

@@ -169,8 +169,9 @@ pub async fn revert_registry(state: State<'_, AppState>) -> Result<usize, String
 #[tauri::command]
 pub async fn create_restore_point(state: State<'_, AppState>, description: String) -> Result<bool, String> {
  let executor = ProcessExecutor;
+ let safe_description = powershell_single_quote(&description);
  let script = format!(
- "Enable-ComputerRestore -Drive ($env:SystemDrive + '\\') -ErrorAction SilentlyContinue; Checkpoint-Computer -Description '{description}' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop"
+ "Enable-ComputerRestore -Drive ($env:SystemDrive + '\\') -ErrorAction SilentlyContinue; Checkpoint-Computer -Description '{safe_description}' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop"
  );
  let result = executor.execute_powershell(&script).await;
  log(&state, &format!("[Restore] Ponto de restauração: {}", if result.exit_code == 0 { "criado" } else { "falhou" }));
@@ -180,7 +181,8 @@ pub async fn create_restore_point(state: State<'_, AppState>, description: Strin
 #[tauri::command]
 pub async fn remove_bloatware(state: State<'_, AppState>, items: Vec<String>) -> Result<u32, String> {
  if items.is_empty() { return Ok(0); }
- let patterns = items.join("','");
+ let safe_patterns = items.iter().map(|p| powershell_single_quote(p)).collect::<Vec<_>>();
+ let patterns = safe_patterns.join("','");
  let script = format!(
  "$patterns = @('{patterns}'); foreach ($p in $patterns) {{ Get-AppxPackage -Name \"*$p*\" -AllUsers -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue; Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -like \"*$p*\" }} | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue }}; Write-Output 'DEBLOAT_DONE'"
  );
@@ -188,6 +190,10 @@ pub async fn remove_bloatware(state: State<'_, AppState>, items: Vec<String>) ->
  let result = executor.execute_powershell(&script).await;
  log(&state, &format!("[Debloat] Remoção em lote concluída ({} pacotes)", items.len()));
  Ok(if result.stdout.contains("DEBLOAT_DONE") { items.len() as u32 } else { 0 })
+}
+
+fn powershell_single_quote(value: &str) -> String {
+ value.replace('\'', "''")
 }
 
 #[tauri::command]

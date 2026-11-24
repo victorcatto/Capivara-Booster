@@ -54,5 +54,6 @@ _ISCC_tmp/
 ## Rust / Tauri
 src-tauri/target/
 src-tauri/gen/schemas/
+src-tauri/Cargo.lock
 node_modules/
 ui/dist/

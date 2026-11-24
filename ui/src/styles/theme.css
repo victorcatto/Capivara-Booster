@@ -1,0 +1,40 @@
+/* Capivara Booster - Tema Cyberpunk (porta de DarkTheme.xaml) */
+:root {
+  --bg: #0F1015;
+  --sidebar: #12131A;
+  --card: #181A22;
+  --card-hover: #202330;
+  --border: #262A38;
+  --console-bg: #0A0B10;
+  --accent-cyan: #00E5FF;
+  --accent-cyan-hover: #33EBFF;
+  --accent-purple: #9D00FF;
+  --accent-purple-hover: #B033FF;
+  --success: #00E676;
+  --warning: #FFB300;
+  --danger: #FF1744;
+  --text-primary: #F4F4F6;
+  --text-secondary: #8E92A4;
+  --text-muted: #5E6377;
+  --gradient: linear-gradient(135deg, #00E5FF 0%, #9D00FF 100%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 265px 1fr;
+  grid-template-rows: 100vh;
+  height: 100vh;
+}

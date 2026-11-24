@@ -1,0 +1,57 @@
+name: Build & Validate Rust (Tauri v2)
+
+on:
+  push:
+    branches: [rust]
+  pull_request:
+    branches: [main, rust]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Frontend (UI)
+        working-directory: ui
+        run: |
+          npm install
+          npm run build
+
+      - name: Check Rust Compilation
+        working-directory: src-tauri
+        run: cargo check --locked 2>&1 | Out-String -Stream | Select-Object -First 200
+
+      - name: Run Rust Tests
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: Build Release Binary
+        working-directory: src-tauri
+        run: cargo build --release --locked
+
+      - name: Validate Binary Exists
+        shell: pwsh
+        run: |
+          $exe = "src-tauri/target/release/capivara-booster.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Binary not found: $exe" }
+          $size = (Get-Item $exe).Length / 1MB
+          Write-Host "Binary size: $([math]::Round($size, 2)) MB"

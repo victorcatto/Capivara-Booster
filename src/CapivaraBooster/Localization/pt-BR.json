@@ -19,6 +19,7 @@
   "Console_Subtitle": "(Logs diretos de PowerShell, CMD, Registro e Arquivos)",
   "Console_Copy": "Copiar Log",
   "Console_Clear": "Limpar",
+  "Console_Toggle": "Mostrar / Ocultar Console",
 
   "Dashboard_Title": "Visão Geral do Sistema & Diagnóstico",
   "Dashboard_Subtitle": "Diagnósticos de timers de hardware, status de latência esports e aceleração rápida do sistema com 1 clique.",

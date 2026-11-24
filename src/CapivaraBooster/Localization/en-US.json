@@ -19,6 +19,7 @@
   "Console_Subtitle": "(Real-time PowerShell, CMD, Registry & File Operations)",
   "Console_Copy": "Copy Log",
   "Console_Clear": "Clear",
+  "Console_Toggle": "Show / Hide Console",
 
   "Dashboard_Title": "System Overview & Diagnostic Telemetry",
   "Dashboard_Subtitle": "Live hardware timer diagnostics, esports latency status, and 1-click system acceleration.",

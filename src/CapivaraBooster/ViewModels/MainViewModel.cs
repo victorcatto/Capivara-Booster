@@ -25,6 +25,7 @@ public class MainViewModel : ObservableObject
     private NavigationTab _currentTab = NavigationTab.Dashboard;
     private string _statusText = "Ready";
     private bool _isGlobalBusy;
+    private bool _isConsoleVisible = false;
 
     // Auth Modal & State
     private bool _isAuthModalOpen;
@@ -141,6 +142,9 @@ public class MainViewModel : ObservableObject
         CheckUpdatesCommand = new RelayCommand(async () => await ExecuteCheckUpdatesAsync());
         ApplyUpdateCommand = new RelayCommand(async () => await ExecuteApplyUpdateAsync());
         DismissUpdateBannerCommand = new RelayCommand(() => IsUpdateBannerVisible = false);
+
+        // Console Toggle Command
+        ToggleConsoleVisibilityCommand = new RelayCommand(() => IsConsoleVisible = !IsConsoleVisible);
 
         // Auth state listener
         AuthService.AuthStateChanged += user =>
@@ -300,10 +304,10 @@ public class MainViewModel : ObservableObject
         set => SetProperty(ref _statusText, value);
     }
 
-    public bool IsGlobalBusy
+    public bool IsConsoleVisible
     {
-        get => _isGlobalBusy;
-        set => SetProperty(ref _isGlobalBusy, value);
+        get => _isConsoleVisible;
+        set => SetProperty(ref _isConsoleVisible, value);
     }
 
     public bool IsAuthModalOpen
@@ -367,6 +371,8 @@ public class MainViewModel : ObservableObject
     public ICommand CheckUpdatesCommand { get; }
     public ICommand ApplyUpdateCommand { get; }
     public ICommand DismissUpdateBannerCommand { get; }
+
+    public ICommand ToggleConsoleVisibilityCommand { get; }
 
     #endregion
 

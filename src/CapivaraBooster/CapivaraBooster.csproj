@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>CapivaraBooster</AssemblyName>
     <RootNamespace>CapivaraBooster</RootNamespace>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <Authors>Capivara Systems Engineering</Authors>
     <Company>Capivara Booster</Company>
     <Product>Capivara Booster Esports Suite</Product>

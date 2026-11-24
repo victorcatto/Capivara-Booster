@@ -3,6 +3,12 @@
 ## Em andamento
 - Validar a compilação Rust/Tauri v2 e o instalador NSIS no GitHub Actions.
 - Auditar a paridade funcional com a versão WPF v1.1.4 antes de publicar a v2.0.0.
+- Atualizar a descrição do repositório e os READMEs com texto profissional, factual e alinhado à versão estável publicada.
+
+## Após paridade e lançamento Rust
+- Remover os resquícios do projeto WPF/.NET: solução e fontes C#, XAML, workflow .NET/Inno Setup, scripts antigos e configuração obsoleta.
+- Manter assets, documentação e dados de compatibilidade ainda usados pelo instalador/updater; só excluir depois de confirmar referências e usuários de v1.x.
+- Centralizar o projeto em uma única árvore oficial no GitHub depois da migração Rust: comparar `main` e `rust`, integrar a implementação final na branch escolhida, atualizar o branch padrão e remover a branch redundante somente após confirmar que o histórico e o CI estão preservados.
 
 ## Depois do lançamento da v2.0.0
 - Aplicar a nova identidade visual do Capivara Booster na UI Rust.

@@ -64,6 +64,8 @@ fn main() {
             commands::revert_registry,
             commands::create_restore_point,
             commands::remove_bloatware,
+            commands::get_installed_bloatware,
+            commands::restore_bloatware,
             commands::disable_telemetry,
             commands::detect_game,
             commands::optimize_game,

@@ -179,10 +179,9 @@ Write-Output 'VENDOR_DOWNLOAD_OK'
             // Download falhou (CDN mudou a versão etc.): cai para abrir o site.
         }
 
-        let open = executor.execute_cmd(&format!("start \"\" \"{}\"", url.replace('&', "^&"))).await;
-        if open.exit_code != 0 {
-            let _ = executor.execute_powershell(&format!("Start-Process '{url}'")).await;
-        }
+        // cmd start quebra URLs com & (o popup "\\ não localizado" vinha daí):
+        // PowerShell Start-Process abre o navegador sem interpretar a URL.
+        let open = executor.execute_powershell(&format!("Start-Process -FilePath '{}'", url.replace('\'', "''"))).await;
         Ok(format!("Abrimos o site oficial da {vendor} no navegador: baixe o driver de '{device_name}' lá e execute o instalador"))
     }
 

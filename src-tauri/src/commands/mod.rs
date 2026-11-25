@@ -475,6 +475,22 @@ fn powershell_single_quote(value: &str) -> String {
 }
 
 #[tauri::command]
+pub async fn get_installed_bloatware(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+ let patterns: Vec<String> = state.debloat.lock().unwrap().get_default_bloatware_list().iter().map(|i| i.package_pattern.clone()).collect();
+ let executor = ProcessExecutor;
+ crate::services::debloat::DebloatService::new().query_installed(&executor, &patterns).await
+}
+
+#[tauri::command]
+pub async fn restore_bloatware(state: State<'_, AppState>, pattern: String) -> Result<bool, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let ok = crate::services::debloat::DebloatService::new().restore_package(&executor, &pattern).await?;
+ log(&state, &format!("[Debloat] Restore de {pattern}: {}", if ok { "executado" } else { "falhou" }));
+ Ok(ok)
+}
+
+#[tauri::command]
 pub async fn disable_telemetry(state: State<'_, AppState>) -> Result<bool, String> {
  require_auth(&state)?;
  {

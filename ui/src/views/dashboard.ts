@@ -13,7 +13,7 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
       <div class="status-card"><h4>${t('Dashboard_OsCard_Title', 'Sistema')}</h4><strong id="os-info">Windows 10/11 (64-bit)</strong><small style="color:var(--accent-cyan);">${t('Dashboard_OsCard_Target', 'Alvo: Windows 10/11')}</small></div>
       <div class="status-card"><h4>${t('Dashboard_HpetCard_Title', 'HPET')}</h4><strong id="hpet-status" class="text-muted">${t('Checking', 'Verificando...')}</strong><small>${t('Dashboard_HpetCard_Desc', 'Latência DPC')}</small></div>
       <div class="status-card"><h4>${t('Dashboard_PowerCard_Title', 'Plano de Energia')}</h4><strong class="text-success">Ultimate Performance</strong><small>${t('Dashboard_PowerCard_Desc', 'Clock travado')}</small></div>
-      <div class="status-card"><h4>${t('Dashboard_GamesCard_Title', 'Jogos')}</h4><strong id="games-summary">${t('Checking', 'Verificando...')}</strong><small>CS2 / Valorant / LoL</small></div>
+      <div class="status-card"><h4>${t('Dashboard_GamesCard_Title', 'Esports Suite')}</h4><strong id="games-summary">${t('Checking', 'Verificando...')}</strong><small>CS2 / Valorant / LoL / PoE</small></div>
     </div>
 
     <div class="hero">
@@ -36,11 +36,27 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
     </div>`;
 
   const refresh = async () => {
+    const hpetStatus = el<HTMLSpanElement>('#hpet-status');
+    if (hpetStatus) {
+      try {
+        const disabled = await invoke<boolean>('get_hpet_status');
+        hpetStatus.textContent = disabled ? 'Disabled' : 'Enabled';
+        hpetStatus.className = disabled ? 'text-success' : '';
+      } catch {
+        hpetStatus.textContent = 'N/A';
+      }
+    }
+
     const games = ['cs2', 'valorant', 'lol'];
     const results = await Promise.all(games.map((g) => invoke<GameDetection>('detect_game', { gameId: g })));
-    const found = results.filter((r) => r.found).length;
+    const poe = await invoke<Array<{ game: string; found: boolean }>>('detect_poe');
+    const found = results.filter((r) => r.found).length + poe.filter((p) => p.found).length;
+    const total = results.length + poe.length;
+    const mark = (ok: boolean) => (ok ? '✔' : '✘');
     const summary = el<HTMLSpanElement>('#games-summary');
-    if (summary) summary.textContent = `${found}/3 (CS2: ${results[0].found ? '✔' : '✘'}, Valorant: ${results[1].found ? '✔' : '✘'}, LoL: ${results[2].found ? '✔' : '✘'})`;
+    if (summary) {
+      summary.textContent = `${found}/${total} (CS2: ${mark(results[0].found)}, Valorant: ${mark(results[1].found)}, LoL: ${mark(results[2].found)}, PoE: ${mark(poe.some((p) => p.found))})`;
+    }
   };
   refresh().catch(() => {});
 

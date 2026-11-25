@@ -9,8 +9,12 @@
   "Nav_Debloat": "Remover Bloatware",
   "Nav_Cleaner": "Limpar Cache & Lixo",
   "Nav_SystemBoost": "Latência do Sistema",
+  "Nav_LowLatency": "Baixa Latência",
   "Nav_GameOptimizer": "Otimizar Jogos",
+  "Nav_Poe": "Path of Exile 1 & 2",
   "Nav_BackupRestore": "Backup & Restauração",
+  "Nav_Drivers": "Driver Booster",
+  "Nav_CheckUpdates": "Verificar atualizações",
 
   "Lang_Portuguese": "PT-BR",
   "Lang_English": "EN-US",

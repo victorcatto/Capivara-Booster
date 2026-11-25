@@ -25,24 +25,23 @@ impl DriverService {
     pub fn new() -> Self { Self }
 
     /// Rastreia dispositivos com driver via WMI (Win32_PnPSignedDriver).
+    /// CSV em vez de JSON: ConvertTo-Json quebra com listas grandes no PS 5.1.
     pub async fn scan(&self, executor: &ProcessExecutor) -> Result<Vec<DriverInfo>, String> {
-        let script = r#"Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue | Where-Object { $_.DeviceName -and $_.DriverVersion } | Select-Object DeviceName, DriverVersion, DriverDate, DriverProviderName, Manufacturer | ConvertTo-Json -Compress"#;
+        let script = r#"Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue | Where-Object { $_.DeviceName -and $_.DriverVersion } | Select-Object DeviceName, DriverVersion, DriverDate, DriverProviderName, Manufacturer | ConvertTo-Csv -NoTypeInformation"#;
         let result = executor.execute_powershell(script).await;
-        if result.exit_code != 0 { return Err(result.stderr); }
+        if result.exit_code != 0 && result.stdout.is_empty() { return Err(result.stderr); }
         let mut drivers: Vec<DriverInfo> = Vec::new();
-        let json = result.stdout.trim();
-        if json.is_empty() { return Ok(drivers); }
-        let value: serde_json::Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
-        let items = if value.is_array() { value.as_array().unwrap().clone() } else { vec![value] };
-        for item in items {
-            let device_name = item.get("DeviceName").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            if device_name.is_empty() { continue; }
+        for (index, line) in result.stdout.lines().enumerate() {
+            if index == 0 || line.trim().is_empty() { continue; }
+            let fields = parse_csv_line(line);
+            if fields.len() < 5 { continue; }
+            if fields[0].trim().is_empty() { continue; }
             drivers.push(DriverInfo {
-                device_name,
-                driver_version: item.get("DriverVersion").and_then(|v| v.as_str()).unwrap_or("").into(),
-                driver_date: item.get("DriverDate").and_then(|v| v.as_str()).unwrap_or("").into(),
-                provider: item.get("DriverProviderName").and_then(|v| v.as_str()).unwrap_or("").into(),
-                manufacturer: item.get("Manufacturer").and_then(|v| v.as_str()).unwrap_or("").into(),
+                device_name: fields[0].trim().to_string(),
+                driver_version: fields[1].trim().to_string(),
+                driver_date: fields[2].trim().to_string(),
+                provider: fields[3].trim().to_string(),
+                manufacturer: fields[4].trim().to_string(),
                 needs_update: None,
             });
         }
@@ -88,4 +87,28 @@ impl DriverService {
         if result.exit_code != 0 { return Err(result.stderr); }
         Ok(dest.to_string())
     }
+}
+
+/// Parser de CSV simples, tolerante a vírgulas dentro de aspas.
+fn parse_csv_line(line: &str) -> Vec<String> {
+    let mut fields = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut chars = line.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '"' {
+            if in_quotes && chars.peek() == Some(&'"') {
+                current.push('"');
+                chars.next();
+            } else {
+                in_quotes = !in_quotes;
+            }
+        } else if c == ',' && !in_quotes {
+            fields.push(std::mem::take(&mut current));
+        } else {
+            current.push(c);
+        }
+    }
+    fields.push(current);
+    fields
 }

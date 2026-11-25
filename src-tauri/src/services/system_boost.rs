@@ -13,11 +13,17 @@ impl SystemBoostService {
 
     pub async fn is_hpet_disabled() -> bool {
         let executor = ProcessExecutor;
-        let result = executor.execute_cmd("bcdedit /enum {current}").await;
-        let clock_disabled = result.stdout.contains("useplatformclock        No")
-            || !result.stdout.to_ascii_lowercase().contains("useplatformclock");
-        let tick_active = result.stdout.contains("useplatformtick         Yes");
-        clock_disabled && tick_active
+        // cmd.exe engole as chaves de {current}: PowerShell com aspas simples.
+        let result = executor.execute_powershell("bcdedit /enum '{current}'").await;
+        if result.stdout.trim().is_empty() {
+            // Fallback: enumeração simples do loader.
+            let fallback = executor.execute_powershell("bcdedit").await;
+            return fallback.stdout.to_ascii_lowercase().contains("disabledynamictick");
+        }
+        let lower = result.stdout.to_ascii_lowercase();
+        let tick_active = lower.contains("useplatformtick") && lower.contains("yes");
+        let dynamic_off = lower.contains("disabledynamictick") && lower.contains("yes");
+        tick_active || dynamic_off
     }
 
     pub async fn set_hpet_state(disable: bool) -> Result<bool, String> {

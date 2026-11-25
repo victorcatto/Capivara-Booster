@@ -29,7 +29,7 @@ body { background: var(--bg); color: var(--text-primary); font-family: "Segoe UI
 .brand-title { font-size: 14.5px; font-weight: 700; color: var(--accent-cyan); }
 .brand-version { margin-top: 3px; font-size: 9.5px; color: var(--accent-purple); }
 .nav-list { display: flex; flex-direction: column; gap: 4px; }
-.nav-ico { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+.nav-ico { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
 .content { min-height: 0; overflow: auto; padding: 30px; }
 .content h1 { font-size: 24px; margin-bottom: 4px; }
 .subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }

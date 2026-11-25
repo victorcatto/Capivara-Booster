@@ -26,5 +26,10 @@
 - **Depende do Claude:** confirmar o release, manter CI verde e evoluir a UI após o lançamento.
 - **Depende de outra pessoa:** autoridade certificadora, caso seja usada assinatura de código.
 
-## Em andamento (v2.1.0)
+## Em andamento (v2.1.1)
+- Melhorar o layout da página do Path of Exile e ajustar os menus do app (organização, espaçamento e hierarquia).
+- Pesquisar na internet por novos scripts de otimização testados e validar cada um antes de adicionar: disponibilizar o máximo possível com confirmação de funcionamento.
+- Revisão gramatical completa (PT-BR e EN-US) da landing page e do README principal do GitHub: texto profissional, bem editado, com as informações mais importantes em destaque.
+- Aumentar o tamanho dos ícones do menu esquerdo (estão pequenos demais) e revisar o layout para responsividade máxima.
+- Mais funções de otimização focadas em Path of Exile 2.
 - Novo menu Driver Booster: rastrear drivers do PC e atualizar baixando direto do fabricante da placa-mãe (ASUS, Gigabyte, MSI, ASRock e afins), com backup e rollback antes de cada instalação.

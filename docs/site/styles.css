@@ -129,7 +129,30 @@ a { color: var(--mint); text-decoration: none; }
 
 .text-muted { color: var(--muted); }
 
+/* Responsividade máxima: grid de cards, tipografia e nav em todas as larguras */
+@media (max-width: 1080px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .steps { grid-template-columns: repeat(3, 1fr); }
+  .hero h1 { font-size: 40px; }
+}
 @media (max-width: 800px) {
   .nav-links { display: none; }
   .hero { padding: 56px 20px 48px; }
+  .hero h1 { font-size: 32px; }
+  .hero-sub { font-size: 15px; }
+  .grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .notes { grid-template-columns: 1fr; }
+  .faq { max-width: 100%; }
+  .section { padding: 48px 20px; }
+  .hero-cta .btn { width: 100%; max-width: 340px; }
+  .hero-badge-row { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .nav-inner { padding: 0 14px; }
+  .brand-name { display: none; }
+  .hero h1 { font-size: 26px; }
+  .hero-note { font-size: 12px; }
+  .btn-lg { padding: 13px 22px; font-size: 14px; }
+  .card-img { max-width: 100%; height: auto; }
 }

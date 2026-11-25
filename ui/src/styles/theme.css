@@ -101,6 +101,15 @@ body { background: var(--bg); color: var(--text-primary); font-family: "Segoe UI
 .cleaner-stat span { display: block; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px; }
 .cleaner-stat strong { font-size: 24px; font-weight: 700; }
 .cleaner-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* PoE: hero editorial da página */
+.poe-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 22px; background: linear-gradient(135deg, rgba(0,229,171,0.08), rgba(0,184,255,0.04)); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 24px; }
+.poe-hero-copy { flex: 1; min-width: 280px; }
+.poe-hero-copy h2 { color: var(--accent-cyan); font-size: 17px; margin-bottom: 6px; }
+.poe-hero-copy p { color: var(--text-secondary); font-size: 12.5px; line-height: 1.6; }
+.poe-hero-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.poe-opt { transition: border-color 0.15s, background 0.15s; }
+.poe-opt:hover { border-color: var(--accent-cyan); background: rgba(0,229,171,0.04); }
 .hero { border: 1px solid var(--accent-cyan); background: var(--card); padding: 24px; margin-bottom: 24px; }
 .hero h2 { color: var(--accent-cyan); font-size: 18px; margin-bottom: 8px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }

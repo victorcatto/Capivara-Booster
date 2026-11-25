@@ -54,7 +54,20 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
     <h1>${t('Poe_Title', 'Path of Exile (PoE 1 & PoE 2)')}</h1>
     <p class="subtitle">${t('Poe_Subtitle', 'Perfil competitivo da engine GGG: gráficos, áudio, shaders, rede e CPU com backup automático.')}</p>
 
-    <div class="status-grid">
+    <div class="poe-hero">
+      <div class="poe-hero-copy">
+        <h2>${t('Poe_Hero_Title', 'Perfil GGG otimizado para mapas densos')}</h2>
+        <p>${t('Poe_Hero_Desc', 'Iluminação global desativada (30 a 75% de FPS em mapas densos), áudio leve, rede em Lockstep e boost ao vivo com timer de 0,5 ms quando o jogo já está aberto. Tudo reversível pelo menu Backup.')}</p>
+      </div>
+      <div class="poe-hero-badges">
+        <span class="drv-chip drv-ok">PoE 1</span>
+        <span class="drv-chip drv-ok">PoE 2</span>
+        <span class="drv-chip drv-mute">DX12 / Vulkan</span>
+        <span class="drv-chip drv-mute">DLSS Quality</span>
+      </div>
+    </div>
+
+    <div class="status-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
       <div class="status-card">
         <h4>PoE 1</h4>
         <strong class="${poe1?.found ? 'text-success' : 'text-muted'}">${poe1?.found ? t('Poe_Found', 'Instalado') : t('Poe_NotFound', 'Não encontrado')}</strong>
@@ -68,7 +81,10 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
     </div>
 
     <div class="card section">
-      <h3>⚙️ ${t('Poe_Options_Header', 'Otimizações')}</h3>
+      <div class="drv-toolbar">
+        <h3>⚙️ ${t('Poe_Options_Header', 'Otimizações')}</h3>
+        <button class="btn btn-secondary btn-sm" id="btn-poe-defaults">${t('Poe_Recommended', 'Recomendados')}</button>
+      </div>
       <div id="poe-options"></div>
       <div class="actions">
         <button class="btn btn-primary" id="btn-poe-apply-poe1" ${poe1?.found ? '' : 'disabled'}>${t('Poe_Apply_Poe1', 'Aplicar Perfil Competitivo: PoE 1')}</button>
@@ -80,21 +96,39 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
 
   const list = el<HTMLDivElement>('#poe-options');
   if (list) {
-    list.innerHTML = OPTION_LABELS.map((option, idx) => `
-      <div class="list-row">
-        <input type="checkbox" id="poe-opt-${idx}" ${options[option.key] ? 'checked' : ''} />
-        <div>
-          <div class="name">${t(`Poe_Opt_${option.key}`, option.pt)}</div>
-          <div class="desc text-muted">${option.tip}</div>
+    list.innerHTML = `<div class="hw-grid">` + OPTION_LABELS.map((option, idx) => `
+      <div class="hw-item poe-opt" style="cursor:pointer;" data-idx="${idx}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="poe-opt-${idx}" ${options[option.key] ? 'checked' : ''} />
+          <strong>${t(`Poe_Opt_${option.key}`, option.pt)}</strong>
         </div>
-        <span></span>
-      </div>`).join('');
+        <div class="desc text-muted" style="margin-top:6px;">${option.tip}</div>
+      </div>`).join('') + `</div>`;
     OPTION_LABELS.forEach((option, idx) => {
-      el<HTMLInputElement>(`#poe-opt-${idx}`)?.addEventListener('change', (e) => {
+      const checkbox = el<HTMLInputElement>(`#poe-opt-${idx}`);
+      checkbox?.addEventListener('change', (e) => {
         options[option.key] = (e.target as HTMLInputElement).checked;
+      });
+      // Clique no card inteiro alterna a opção (área maior, mais confortável).
+      el<HTMLDivElement>(`.poe-opt[data-idx="${idx}"]`)?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).tagName === 'INPUT') return;
+        checkbox!.checked = !checkbox!.checked;
+        options[option.key] = checkbox!.checked;
       });
     });
   }
+
+  el<HTMLButtonElement>('#btn-poe-defaults')?.addEventListener('click', () => {
+    OPTION_LABELS.forEach((option, idx) => {
+      const defaults: Record<string, boolean> = {
+        global_illumination_off: true, shadows_min: true, screen_shake_off: true, dynamic_culling: true,
+        dynamic_resolution: true, renderer_dx12: true, sound_channels_low: true, mute_effects_keep_loot: false, lockstep: true,
+      };
+      options[option.key] = defaults[option.key];
+      const checkbox = el<HTMLInputElement>(`#poe-opt-${idx}`);
+      if (checkbox) checkbox.checked = defaults[option.key];
+    });
+  });
 
   const apply = async (game: 'poe1' | 'poe2') => {
     try {

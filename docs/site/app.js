@@ -144,6 +144,7 @@ function renderNotes(releases) {
   host.innerHTML = releases.map((rel, index) => {
     const date = new Date(rel.published_at).toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'en-US');
     const sections = parseNotes(rel.body || '');
+    if (sections.length > 0) {
     const asset = (rel.assets || []).find((a) => a.name === INSTALLER);
     const download = asset ? asset.browser_download_url : RELEASES_URL;
     const label = index === 0 ? I18N[lang].notes_latest : I18N[lang].notes_previous;
@@ -170,30 +171,56 @@ function renderNotes(releases) {
 }
 
 /// Divide o corpo da release em seções por título (##, **Título**, [EN-US] etc.).
+/// Quando o corpo tem blocos EN-US e PT-BR, mantém apenas o idioma da página.
 function parseNotes(body) {
   const lines = body.split('\n');
-  const sections = [];
+  const blocks = [];
   let current = null;
+  let langBlock = null;
   const headingRe = /^(?:#{1,3}\s*(.+)|\*\*(.+)\*\*|\[([^\]]+)\]\s*)$/;
+
   for (const raw of lines) {
     const line = raw.trim();
-    if (line.length === 0) continue;
+    if (line.length === 0) { if (current) { blocks.push({ langBlock, section: current }); current = null; } continue; }
+
+    const langHeader = line.match(/^\[?(EN-US|PT-BR|EN|PT)\]?[:.]?\s*$/i);
+    if (langHeader) {
+      if (current) { blocks.push({ langBlock, section: current }); current = null; }
+      langBlock = langHeader[1].toUpperCase().startsWith('EN') ? 'EN' : 'PT';
+      continue;
+    }
+
     const heading = line.match(headingRe);
     if (heading) {
       const title = (heading[1] || heading[2] || heading[3] || '').trim();
       if (title.length > 0 && title.length < 60) {
+        if (current) blocks.push({ langBlock, section: current });
         current = { title, items: [] };
-        sections.push(current);
         continue;
       }
     }
+
     const bullet = line.match(/^[-*•]\s*(.+)$/);
     if (bullet) {
-      if (!current) { current = { title: I18N[lang].changelog_title, items: [] }; sections.push(current); }
+      if (!current) current = { title: I18N[lang].changelog_title, items: [] };
       current.items.push(bullet[1].trim());
     } else if (current && current.items.length === 0 && line.length > 20) {
       current.items.push(line);
     }
+  }
+  if (current) blocks.push({ langBlock, section: current });
+
+  // Se o corpo tem blocos dos dois idiomas, filtra pelo idioma da página.
+  const hasEn = blocks.some((b) => b.langBlock === 'EN');
+  const hasPt = blocks.some((b) => b.langBlock === 'PT');
+  const pageLang = lang === 'pt-BR' ? 'PT' : 'EN';
+  const filtered = hasEn && hasPt ? blocks.filter((b) => b.langBlock === pageLang || b.langBlock === null) : blocks;
+
+  const sections = [];
+  for (const { section } of filtered) {
+    const existing = sections.find((s) => s.title === section.title);
+    if (existing) existing.items.push(...section.items);
+    else sections.push(section);
   }
   return sections.filter((section) => section.items.length > 0);
 }

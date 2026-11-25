@@ -149,7 +149,6 @@ function renderNotes(releases) {
   host.innerHTML = releases.map((rel, index) => {
     const date = new Date(rel.published_at).toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'en-US');
     const sections = parseNotes(rel.body || '');
-    if (sections.length > 0) {
     const asset = (rel.assets || []).find((a) => a.name === INSTALLER);
     const download = asset ? asset.browser_download_url : RELEASES_URL;
     const label = index === 0 ? I18N[lang].notes_latest : I18N[lang].notes_previous;

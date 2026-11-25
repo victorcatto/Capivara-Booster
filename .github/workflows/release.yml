@@ -143,7 +143,7 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
           New-Item -ItemType Directory -Force docs/site | Out-Null
-          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases?per_page=2" -Headers @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}" } -Headers @{ "Cache-Control" = "no-cache" }
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases?per_page=2" -Headers @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}"; "Cache-Control" = "no-cache" }
           $data = $releases | ForEach-Object {
             [ordered]@{
               tag = $_.tag_name

@@ -107,8 +107,24 @@ impl CleanerService {
                 match std::fs::metadata(&path) {
                     Ok(meta) => {
                         *bytes += meta.len();
-                        // Arquivo em uso: pula sem falhar o lote (erro conta como skipped).
-                        if std::fs::remove_file(&path).is_ok() { *count += 1; } else { *errors += 1; }
+                        // Read-only e arquivos em uso: tenta limpar atributo e remover;
+                        // se ainda falhar, é arquivo aberto por outro processo (skip, não erro fatal).
+                        if std::fs::remove_file(&path).is_ok() {
+                            *count += 1;
+                        } else {
+                            #[cfg(windows)]
+                            {
+                                use std::os::windows::fs::PermissionsExt;
+                                if let Ok(mut perms) = std::fs::metadata(&path).map(|m| m.permissions()) {
+                                    if perms.permissions() .mode() & 0o444 != 0 {
+                                        let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o666));
+                                        if std::fs::remove_file(&path).is_ok() { *count += 1; } else { *errors += 1; }
+                                        continue;
+                                    }
+                                }
+                            }
+                            *errors += 1;
+                        }
                     }
                     Err(_) => *errors += 1,
                 }

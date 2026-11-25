@@ -146,7 +146,7 @@ pub async fn clean_item(state: State<'_, AppState>, item_id: String) -> Result<C
   result
  };
  if item_id == "windows_update" { executor.execute_cmd("net start wuauserv").await; }
- log(&state, &format!("[Cleaner] {item_id}: {count} arquivos, {errors} erros"));
+ log(&state, &format!("[Cleaner OK] {item_id}: {count} arquivos limpos, {errors} em uso pulados"));
  Ok(CleaningSummary { total_bytes_cleaned: bytes, files_deleted: count, errors_count: errors })
 }
 
@@ -355,11 +355,26 @@ pub async fn update_driver_device(state: State<'_, AppState>, deviceName: String
  let executor = ProcessExecutor;
  log(&state, &format!("[Drivers] Atualizando via Windows Update: {deviceName}"));
  let result = crate::services::drivers::DriverService::new().update_via_windows_update(&executor, &deviceName).await;
- match &result {
- Ok(msg) => log(&state, &format!("[Drivers OK] {msg}")),
- Err(e) => log(&state, &format!("[Drivers Erro] {e}")),
+ match result {
+ Ok(msg) => {
+  log(&state, &format!("[Drivers OK] {msg}"));
+  Ok(msg)
  }
- result
+ Err(e) => {
+  // Fallback: baixar e instalar direto do fabricante (Intel/NVIDIA/AMD/Realtek).
+  log(&state, &format!("[Drivers] Windows Update sem pacote; tentando o fabricante..."));
+  match crate::services::drivers::DriverService::new().download_and_install_from_vendor(&executor, &deviceName).await {
+  Ok(msg) => {
+   log(&state, &format!("[Drivers OK] {msg}"));
+   Ok(msg)
+  }
+  Err(e2) => {
+   log(&state, &format!("[Drivers Erro] {e2}"));
+   Err(e2)
+  }
+  }
+ }
+ }
 }
 
 #[tauri::command]

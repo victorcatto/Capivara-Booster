@@ -142,6 +142,42 @@ Write-Output ("REBOOT=" + $installResult.RebootRequired)
         else { Err(format!("Windows Update não respondeu para '{safe_name}': {}", result.stderr)) }
     }
 
+    /// Fallback quando o Windows Update não tem o driver: baixa o instalador
+    /// web oficial do fabricante (Intel DSA / NVIDIA app / AMD Adrenalin) e executa.
+    pub async fn download_and_install_from_vendor(&self, executor: &ProcessExecutor, device_name: &str) -> Result<String, String> {
+        let lower = device_name.to_lowercase();
+        let (vendor, url): (&str, &str) = if lower.contains("intel") {
+            ("Intel", "https://www.intel.com/content/www/us/en/detect.html")
+        } else if lower.contains("nvidia") || lower.contains("geforce") {
+            ("NVIDIA", "https://www.nvidia.com/en-us/software/nvidia-app/")
+        } else if lower.contains("radeon") || lower.contains("amd") || lower.contains("advanced micro") {
+            ("AMD", "https://www.amd.com/en/support/download/drivers.html")
+        } else if lower.contains("realtek") {
+            ("Realtek", "https://www.realtek.com/Downloads")
+        } else {
+            return Err(format!("Nenhuma fonte de download conhecida para '{device_name}'. Use o menu Suporte oficial do fabricante."));
+        };
+
+        // O instalador web do fabricante é pequeno e detecta o driver certo sozinho:
+        // baixamos via Invoke-WebRequest (respeita TLS do Windows) e executamos elevado.
+        let dest = std::env::temp_dir().join(format!("capivara-{}-setup.exe", vendor.to_lowercase()));
+        let script = format!(
+            r#"$ErrorActionPreference = 'Stop'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Invoke-WebRequest -Uri '{url}' -OutFile '{dest}' -UseBasicParsing
+Start-Process -FilePath '{dest}' -Verb RunAs
+Write-Output 'VENDOR_DOWNLOAD_OK'
+"#,
+            url = url,
+            dest = dest.display()
+        );
+        let result = executor.execute_powershell(&script).await;
+        if !result.stdout.contains("VENDOR_DOWNLOAD_OK") {
+            return Err(format!("Falha ao baixar o instalador da {vendor}: {}", result.stderr));
+        }
+        Ok(format!("Instalador da {vendor} baixado e iniciado: siga o assistente para atualizar '{device_name}'"))
+    }
+
     /// Exporta backup dos drivers atuais (pnputil) para a pasta indicada.
     pub async fn export_backup(&self, executor: &ProcessExecutor, dest: &str) -> Result<String, String> {
         std::fs::create_dir_all(dest).map_err(|e| e.to_string())?;

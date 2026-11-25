@@ -71,11 +71,9 @@ impl LowLatencyService {
         }).collect()
     }
 
-    /// Aplica o tweak escolhido. Todos são rastreados para rollback.
-    pub async fn apply_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+    /// Parte síncrona: tweaks de registro. Guard solto antes de qualquer await.
+    pub fn apply_registry_tweak(reg: &mut RegistryService, tweak_id: &str) -> Result<bool, String> {
         match tweak_id {
-            "dynamic_tick" => { executor.execute_cmd("bcdedit /set disabledynamictick yes").await; Ok(true) }
-            "synthetic_timer" => { executor.execute_cmd("bcdedit /set useplatformtick yes").await; Ok(true) }
             "priority_separation" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 0x26).map(|_| true),
             "usb_suspend" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Services\USB", "DisableSelectiveSuspend", 1).map(|_| true),
             "queue_sizes" => {
@@ -86,24 +84,32 @@ impl LowLatencyService {
                 .and_then(|_| reg.set_dword(HKCU, r"Control Panel\Mouse", "MouseThreshold1", 0))
                 .and_then(|_| reg.set_dword(HKCU, r"Control Panel\Mouse", "MouseThreshold2", 0))
                 .map(|_| true),
+            "delivery_opt" => reg.set_dword(HKLM, r"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", "DODownloadMode", 0).map(|_| true),
+            "hags" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode", 2).map(|_| true),
+            "pcie_aspm" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "FeatureSettingsOverride", 3).map(|_| true),
+            "power_throttling" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling", "PowerThrottlingOff", 1).map(|_| true),
+            "dynamic_tick" | "synthetic_timer" | "nagle" => Ok(true),
+            _ => Err(format!("tweak desconhecido: {tweak_id}")),
+        }
+    }
+
+    /// Parte async: bcdedit e PowerShell (Nagle). Chamada sem guard vivo.
+    pub async fn apply_bcd_tweak(executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+        match tweak_id {
+            "dynamic_tick" => { executor.execute_cmd("bcdedit /set disabledynamictick yes").await; Ok(true) }
+            "synthetic_timer" => { executor.execute_cmd("bcdedit /set useplatformtick yes").await; Ok(true) }
             "nagle" => {
                 let script = r#"$ifs = Get-NetAdapter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InterfaceGuid -Unique; foreach ($guid in $ifs) { $base = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid"; Set-ItemProperty -Path $base -Name TcpAckFrequency -Value 1 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $base -Name TCPNoDelay -Value 1 -Type DWord -ErrorAction SilentlyContinue }"#;
                 let result = executor.execute_powershell(script).await;
                 Ok(result.exit_code == 0)
             }
-            "delivery_opt" => reg.set_dword(HKLM, r"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", "DODownloadMode", 0).map(|_| true),
-            "hags" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode", 2).map(|_| true),
-            "pcie_aspm" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "FeatureSettingsOverride", 3).map(|_| true),
-            "power_throttling" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling", "PowerThrottlingOff", 1).map(|_| true),
-            _ => Err(format!("tweak desconhecido: {tweak_id}")),
+            _ => Ok(true),
         }
     }
 
-    /// Reverte um tweak ao padrão do Windows.
-    pub async fn revert_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+    /// Parte síncrona do revert: registro.
+    pub fn revert_registry_tweak(reg: &mut RegistryService, tweak_id: &str) -> Result<bool, String> {
         match tweak_id {
-            "dynamic_tick" => { executor.execute_cmd("bcdedit /deletevalue disabledynamictick").await; Ok(true) }
-            "synthetic_timer" => { executor.execute_cmd("bcdedit /deletevalue useplatformtick").await; Ok(true) }
             "priority_separation" => reg.set_dword(HKLM, r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 2).map(|_| true),
             "usb_suspend" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Services\USB", "DisableSelectiveSuspend").map(|_| true),
             "queue_sizes" => {
@@ -114,16 +120,26 @@ impl LowLatencyService {
                 .and_then(|_| reg.set_dword(HKCU, r"Control Panel\Mouse", "MouseThreshold1", 6))
                 .and_then(|_| reg.set_dword(HKCU, r"Control Panel\Mouse", "MouseThreshold2", 10))
                 .map(|_| true),
+            "delivery_opt" => reg.delete_value(HKLM, r"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", "DODownloadMode").map(|_| true),
+            "hags" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode").map(|_| true),
+            "pcie_aspm" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "FeatureSettingsOverride").map(|_| true),
+            "power_throttling" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling", "PowerThrottlingOff").map(|_| true),
+            "dynamic_tick" | "synthetic_timer" | "nagle" => Ok(true),
+            _ => Err(format!("tweak desconhecido: {tweak_id}")),
+        }
+    }
+
+    /// Parte async do revert: bcdedit e Nagle.
+    pub async fn revert_bcd_tweak(executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+        match tweak_id {
+            "dynamic_tick" => { executor.execute_cmd("bcdedit /deletevalue disabledynamictick").await; Ok(true) }
+            "synthetic_timer" => { executor.execute_cmd("bcdedit /deletevalue useplatformtick").await; Ok(true) }
             "nagle" => {
                 let script = r#"$ifs = Get-NetAdapter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InterfaceGuid -Unique; foreach ($guid in $ifs) { $base = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid"; Remove-ItemProperty -Path $base -Name TcpAckFrequency -ErrorAction SilentlyContinue; Remove-ItemProperty -Path $base -Name TCPNoDelay -ErrorAction SilentlyContinue }"#;
                 let result = executor.execute_powershell(script).await;
                 Ok(result.exit_code == 0)
             }
-            "delivery_opt" => reg.delete_value(HKLM, r"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", "DODownloadMode").map(|_| true),
-            "hags" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode").map(|_| true),
-            "pcie_aspm" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "FeatureSettingsOverride").map(|_| true),
-            "power_throttling" => reg.delete_value(HKLM, r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling", "PowerThrottlingOff").map(|_| true),
-            _ => Err(format!("tweak desconhecido: {tweak_id}")),
+            _ => Ok(true),
         }
     }
 

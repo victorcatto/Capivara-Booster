@@ -71,8 +71,8 @@ impl PoeService {
         ]
     }
 
-    /// Aplica o perfil competitivo no .ini com backup prévio via RestoreService.
-    pub async fn apply_profile(reg: &mut RegistryService, restore: &mut RestoreService, executor: &ProcessExecutor, game: &str, options: &PoeOptions) -> Result<String, String> {
+    /// Parte síncrona do perfil: .ini com backup, GPU preference. Sem await.
+    pub fn apply_file_profile(reg: &mut RegistryService, restore: &mut RestoreService, game: &str, options: &PoeOptions) -> Result<String, String> {
         let installs = Self::new().detect();
         let install = installs.iter().find(|i| i.game == game && i.found).ok_or_else(|| format!("Path of Exile {game} não encontrado"))?;
         let config = PathBuf::from(&install.config_path);
@@ -102,16 +102,20 @@ impl PoeService {
 
         write_ini(&config, &ini)?;
 
-        // GPU preference + Nagle no Windows
         let exe_names: &[&str] = if game == "poe2" { POE2_EXES } else { POE1_EXES };
         for exe in exe_names {
-            let key = format!(r"SOFTWARE\Microsoft\DirectX\UserGpuPreferences");
+            let key = r"SOFTWARE\Microsoft\DirectX\UserGpuPreferences".to_string();
             reg.set_string(HKLM, &key, exe, "GpuPreference=2;")?;
         }
-        let script = r#"$ifs = Get-NetAdapter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InterfaceGuid -Unique; foreach ($guid in $ifs) { $base = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid"; Set-ItemProperty -Path $base -Name TcpAckFrequency -Value 1 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $base -Name TCPNoDelay -Value 1 -Type DWord -ErrorAction SilentlyContinue }"#;
-        let _ = executor.execute_powershell(script).await;
 
         Ok(config.display().to_string())
+    }
+
+    /// Parte async: Nagle nas interfaces ativas. Chamada sem guard vivo.
+    pub async fn apply_network_tweaks(executor: &ProcessExecutor) -> Result<(), String> {
+        let script = r#"$ifs = Get-NetAdapter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InterfaceGuid -Unique; foreach ($guid in $ifs) { $base = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid"; Set-ItemProperty -Path $base -Name TcpAckFrequency -Value 1 -Type DWord -ErrorAction SilentlyContinue; Set-ItemProperty -Path $base -Name TCPNoDelay -Value 1 -Type DWord -ErrorAction SilentlyContinue }"#;
+        let _ = executor.execute_powershell(script).await;
+        Ok(())
     }
 
     /// Limpa os caches de shader do PoE/PoE2 (as pastas são reconstruídas pelo jogo).

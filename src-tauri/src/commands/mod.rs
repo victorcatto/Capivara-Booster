@@ -169,10 +169,15 @@ pub fn get_latency_tweaks(state: State<AppState>) -> Vec<crate::services::low_la
 pub async fn apply_latency_tweak(state: State<'_, AppState>, tweak_id: String) -> Result<bool, String> {
  require_auth(&state)?;
  let executor = ProcessExecutor;
- let result = {
+ // Registry tweaks são síncronos e rápidos: guard solta antes de qualquer await.
+ let registry_part = {
  let mut registry = state.registry.lock().unwrap();
- crate::services::low_latency::LowLatencyService::apply_tweak(&mut registry, &executor, &tweak_id).await
+ crate::services::low_latency::LowLatencyService::apply_registry_tweak(&mut registry, &tweak_id)
  };
+ let bcd_part = if registry_part.is_ok() {
+ crate::services::low_latency::LowLatencyService::apply_bcd_tweak(&executor, &tweak_id).await
+ } else { Ok(true) };
+ let result = registry_part.and(bcd_part);
  match &result {
  Ok(_) => log(&state, &format!("[Latency] {tweak_id} aplicado")),
  Err(e) => log(&state, &format!("[Latency Erro] {tweak_id}: {e}")),
@@ -184,10 +189,14 @@ pub async fn apply_latency_tweak(state: State<'_, AppState>, tweak_id: String) -
 pub async fn revert_latency_tweak(state: State<'_, AppState>, tweak_id: String) -> Result<bool, String> {
  require_auth(&state)?;
  let executor = ProcessExecutor;
- let result = {
+ let registry_part = {
  let mut registry = state.registry.lock().unwrap();
- crate::services::low_latency::LowLatencyService::revert_tweak(&mut registry, &executor, &tweak_id).await
+ crate::services::low_latency::LowLatencyService::revert_registry_tweak(&mut registry, &tweak_id)
  };
+ let bcd_part = if registry_part.is_ok() {
+ crate::services::low_latency::LowLatencyService::revert_bcd_tweak(&executor, &tweak_id).await
+ } else { Ok(true) };
+ let result = registry_part.and(bcd_part);
  log(&state, &format!("[Latency] {tweak_id} revertido"));
  result
 }
@@ -211,10 +220,17 @@ pub async fn apply_poe_profile(state: State<'_, AppState>, game: String, options
  require_auth(&state)?;
  let opts = options.unwrap_or_default();
  let executor = ProcessExecutor;
- let result = {
+ // .ini e registro são rápidos: guards soltos antes do await do Nagle.
+ let file_part = {
  let mut registry = state.registry.lock().unwrap();
  let mut restore = state.restore.lock().unwrap();
- crate::services::poe::PoeService::apply_profile(&mut registry, &mut restore, &executor, &game, &opts).await
+ crate::services::poe::PoeService::apply_file_profile(&mut registry, &mut restore, &game, &opts)
+ };
+ let result = if let Ok(path) = &file_part {
+ crate::services::poe::PoeService::apply_network_tweaks(&executor).await?;
+ file_part
+ } else {
+ file_part
  };
  match &result {
  Ok(path) => log(&state, &format!("[PoE] Perfil {game} aplicado: {path}")),

@@ -1,9 +1,9 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "releaseDate": "2026-11-25",
   "title": "Capivara Booster v2.0.0 - Rust Edition (Tauri v2)",
   "changelog": "[EN-US]\n- Full rewrite in Rust with Tauri v2: single lightweight executable, no .NET runtime dependency\n- Same feature set: UWP debloat, telemetry controls, cache/shader cleaner, HPET and power plan tuning, game profiles for CS2, Valorant and LoL, restore points, registry rollback and backups\n- Local account vault protected by Windows DPAPI with PBKDF2-HMAC-SHA256 (100k iterations)\n- Auto-updater keeps the same version.json contract: SHA-256 verified downloads and elevated NSIS install\n- Live execution console hidden by default with localized toggle; PT-BR/EN-US switching at runtime\n\n[PT-BR]\n- Reescrita completa em Rust com Tauri v2: executável único e leve, sem dependência do runtime .NET\n- Mesmo conjunto de recursos: debloat UWP, controles de telemetria, limpeza de caches e shaders, HPET e plano de energia, perfis para CS2, Valorant e LoL, pontos de restauração, rollback de registro e backups\n- Cofre de contas local protegido por DPAPI com PBKDF2-HMAC-SHA256 (100 mil iterações)\n- Auto-atualizador mantém o mesmo contrato version.json: download verificado por SHA-256 e instalação NSIS elevada\n- Console de execução oculto por padrão com botão localizado; troca PT-BR/EN-US em tempo real",
-  "installerUrl": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.1.0/CapivaraBooster-Setup-v2.1.0.exe",
-  "sha256": "1BA9A266829BDBAE7C8168754ABFE2966DD66583D73368B40A7E4CE8D44EC447",
+  "installerUrl": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.1.1/CapivaraBooster-Setup-v2.1.1.exe",
+  "sha256": "92CFE63DE29114E88F86677F95223E9F8DE78369FAC04CCEEDA0DD2C7CCFC17C",
   "mandatory": false
 }

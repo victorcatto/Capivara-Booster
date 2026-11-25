@@ -102,7 +102,7 @@ Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { "DISK
         // Fluxo de conteúdo: cabeçalho da marca, seções e rodapé.
         let mut ops = String::new();
         let mut y = PAGE_H - MARGIN;
-        let mut line = |ops: &mut String, x: f64, yy: f64, size: f64, font: char, text: &str| {
+        let write_line = |ops: &mut String, x: f64, yy: f64, size: f64, font: &str, text: &str| {
             let safe = text.replace('\\', "\\\\").replace('(', "\\(").replace(')', "\\)");
             ops.push_str(&format!("BT /{} {} Tf {} {} Td ({}) Tj ET\n", font, size, x, yy, safe));
         };
@@ -110,22 +110,22 @@ Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { "DISK
         // Faixa de marca: retângulo Cyber Mint escuro + título branco.
         ops.push_str(&format!("q 0.00 0.90 0.67 rg {} {} 547.28 70 re f Q\n", MARGIN, PAGE_H - 110.0));
         ops.push_str(&format!("q 0.03 0.07 0.09 rg {} {} 547.28 4 re f Q\n", MARGIN, PAGE_H - 114.0));
-        line(&mut ops, MARGIN + 16.0, PAGE_H - 88.0, 24.0, 'F2', "CAPIVARA BOOSTER");
-        line(&mut ops, MARGIN + 16.0, PAGE_H - 104.0, 10.5, 'F1', "Relatorio Completo do Sistema: performance e latencia");
+        write_line(&mut ops, MARGIN + 16.0, PAGE_H - 88.0, 24.0, "F2", "CAPIVARA BOOSTER");
+        write_line(&mut ops, MARGIN + 16.0, PAGE_H - 104.0, 10.5, "F1", "Relatorio Completo do Sistema: performance e latencia");
         y = PAGE_H - 150.0;
 
         for section in &sections {
-            line(&mut ops, MARGIN, y, 14.0, 'F2', &section.title);
+            write_line(&mut ops, MARGIN, y, 14.0, "F2", &section.title);
             y -= LINE_H + 2.0;
             for l in &section.lines {
                 if y < MARGIN + 40.0 { break; }
-                line(&mut ops, MARGIN + 10.0, y, 10.5, 'F1', l);
+                write_line(&mut ops, MARGIN + 10.0, y, 10.5, "F1", l);
                 y -= LINE_H;
             }
             y -= 8.0;
         }
 
-        line(&mut ops, MARGIN, MARGIN - 16.0, 8.5, 'F1', "Gerado pelo Capivara Booster: github.com/victorcatto/Capivara-Booster");
+        write_line(&mut ops, MARGIN, MARGIN - 16.0, 8.5, "F1", "Gerado pelo Capivara Booster: github.com/victorcatto/Capivara-Booster");
 
         let stream = ops;
         let objects = [

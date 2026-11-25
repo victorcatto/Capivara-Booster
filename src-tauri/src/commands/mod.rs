@@ -257,6 +257,54 @@ pub async fn boost_live_poe(state: State<'_, AppState>, game: String) -> Result<
 }
 
 #[tauri::command]
+pub fn detect_cs2() -> crate::services::cs2::Cs2Install {
+ crate::services::cs2::Cs2Service::new().detect()
+}
+
+#[tauri::command]
+pub async fn apply_cs2_profile(state: State<'_, AppState>) -> Result<Vec<crate::services::cs2::Cs2TweakStatus>, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let install = crate::services::cs2::Cs2Service::new().detect();
+ if !install.found { return Err("Counter-Strike 2 não encontrado na Steam".into()); }
+ // Registro com guards curtos; sistema/energia async sem guard.
+ let reg_part = {
+ let mut registry = state.registry.lock().unwrap();
+ let mut restore = state.restore.lock().unwrap();
+ crate::services::cs2::Cs2Service::apply_registry_tweaks(&mut registry, &mut restore, &install.exe_path)
+ };
+ let sys_part = crate::services::cs2::Cs2Service::apply_system_tweaks(&executor).await;
+ let mut all = reg_part?;
+ all.extend(sys_part?);
+ log(&state, &format!("[CS2] Perfil aplicado: {} tweaks", all.iter().filter(|s| s.applied).count()));
+ Ok(all)
+}
+
+#[tauri::command]
+pub async fn apply_cs2_configs(state: State<'_, AppState>, refreshRate: u32) -> Result<Vec<String>, String> {
+ require_auth(&state)?;
+ let install = crate::services::cs2::Cs2Service::new().detect();
+ if !install.found { return Err("Counter-Strike 2 não encontrado na Steam".into()); }
+ let mut results = Vec::new();
+ {
+ let mut restore = state.restore.lock().unwrap();
+ results.push(crate::services::cs2::Cs2Service::apply_video_config(&mut restore, &install.video_txt)?);
+ results.push(crate::services::cs2::Cs2Service::apply_autoexec(&mut restore, &install.cfg_dir)?);
+ results.push(crate::services::cs2::Cs2Service::apply_launch_options(&mut restore, &install.cfg_dir, refreshRate.max(60).min(360))?);
+ }
+ log(&state, &format!("[CS2 OK] Configs aplicadas: {}", results.len()));
+ Ok(results)
+}
+
+#[tauri::command]
+pub async fn clear_cs2_caches(state: State<'_, AppState>) -> Result<(u64, u32), String> {
+ require_auth(&state)?;
+ let result = crate::services::cs2::Cs2Service::clear_shader_caches()?;
+ log(&state, &format!("[CS2 Cache] {:.1} MB em {} arquivos", result.0 as f64 / 1_048_576.0, result.1));
+ Ok(result)
+}
+
+#[tauri::command]
 pub fn get_app_version() -> String {
  env!("CARGO_PKG_VERSION").to_string()
 }

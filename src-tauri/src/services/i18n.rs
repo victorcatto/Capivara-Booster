@@ -3,6 +3,11 @@ use std::path::PathBuf;
 use serde_json::Value;
 use crate::services::registry::dirs_roaming_data;
 
+/// Dicionários embutidos no binário: funcionam dentro do instalador NSIS
+/// sem depender de arquivos soltos ao lado do exe.
+const PT_BR_JSON: &str = include_str!("../../localization/pt-BR.json");
+const EN_US_JSON: &str = include_str!("../../localization/en-US.json");
+
 pub struct I18nService {
  pub strings: HashMap<String, String>,
  pub current_language: String,
@@ -33,7 +38,7 @@ impl I18nService {
  }
 
  pub fn get(&self, key: &str) -> String {
- self.strings.get(key).cloned().unwrap_or_else(|| format!("[{key}]"))
+ self.strings.get(key).cloned().unwrap_or_else(|| key.to_string())
  }
 
  pub fn is_portuguese(&self) -> bool { self.current_language == "pt-BR" }
@@ -51,16 +56,21 @@ impl I18nService {
  }
 
  fn load_dictionary(&mut self, lang: &str) {
- // Tenta pasta do executável e pasta de desenvolvimento
- let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|x| x.to_path_buf()));
- let mut candidates: Vec<PathBuf> = Vec::new();
- if let Some(dir) = exe_dir {
- candidates.push(dir.join("localization").join(format!("{lang}.json")));
- candidates.push(dir.join("../../src-tauri/localization").join(format!("{lang}.json")));
+ // Fonte primária: dicionário embutido (sempre presente, sempre atual).
+ let embedded = if lang == "pt-BR" { PT_BR_JSON } else { EN_US_JSON };
+ if let Ok(Value::Object(obj)) = serde_json::from_str::<Value>(embedded) {
+ self.strings.clear();
+ for (k, v) in obj {
+ if let Value::String(s) = v {
+ self.strings.insert(k, s);
  }
- candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("localization").join(format!("{lang}.json")));
-
- for candidate in candidates {
+ }
+ return;
+ }
+ // Fallback: arquivos ao lado do exe (dev e overrides futuros).
+ let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|x| x.to_path_buf()));
+ if let Some(dir) = exe_dir {
+ let candidate = dir.join("localization").join(format!("{lang}.json"));
  if let Ok(json) = std::fs::read_to_string(&candidate) {
  if let Ok(Value::Object(obj)) = serde_json::from_str::<Value>(&json) {
  self.strings.clear();
@@ -69,7 +79,6 @@ impl I18nService {
  self.strings.insert(k, s);
  }
  }
- return;
  }
  }
  }

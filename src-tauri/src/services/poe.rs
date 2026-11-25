@@ -26,6 +26,8 @@ pub struct PoeOptions {
     pub sound_channels_low: bool,
     pub mute_effects_keep_loot: bool,
     pub lockstep: bool,
+    pub dlss_quality: bool,
+    pub rebar_force: bool,
 }
 
 impl Default for PoeOptions {
@@ -40,6 +42,8 @@ impl Default for PoeOptions {
             sound_channels_low: true,
             mute_effects_keep_loot: false,
             lockstep: true,
+            dlss_quality: true,
+            rebar_force: true,
         }
     }
 }
@@ -106,6 +110,9 @@ impl PoeService {
             set_option(graphics, "texture_quality", "1");
             set_option(graphics, "engine_multithreading_mode", "true");
             set_option(graphics, "vsync", "false");
+            // Upscaler no preset Quality (sweet spot de mid-range, ex.: RTX 3060 Ti).
+            set_option(graphics, "upscale_mode", if options.dlss_quality { "DLSS" } else { "Off" });
+            set_option(graphics, "upscale_mode_quality", if options.dlss_quality { "2" } else { "0" });
         }
 
         write_ini(&config, &ini)?;
@@ -113,7 +120,9 @@ impl PoeService {
         let exe_names: &[&str] = if game == "poe2" { POE2_EXES } else { POE1_EXES };
         for exe in exe_names {
             let key = r"SOFTWARE\Microsoft\DirectX\UserGpuPreferences".to_string();
-            reg.set_string(HKLM, &key, exe, "GpuPreference=2;")?;
+            // GpuPreference=2 (alta performance) + ReBAR otimizado para streaming de assets.
+            let value = if game == "poe2" && options.rebar_force { "GpuPreference=2;AutoHDREnable=0;" } else { "GpuPreference=2;" };
+            reg.set_string(HKLM, &key, exe, value)?;
         }
 
         Ok(config.display().to_string())

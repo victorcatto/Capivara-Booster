@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod cleaner;
+pub mod cs2;
 pub mod drivers;
 pub mod hardware;
 pub mod debloat;

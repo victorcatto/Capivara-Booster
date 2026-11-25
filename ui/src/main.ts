@@ -9,6 +9,7 @@ import { renderCleaner } from './views/cleaner';
 import { renderBoost } from './views/boost';
 import { renderLatency } from './views/latency';
 import { renderGames } from './views/games';
+import { renderCs2 } from './views/cs2';
 import { renderPoe } from './views/poe';
 import { renderDrivers } from './views/drivers';
 import { renderBackup } from './views/backup';
@@ -22,6 +23,7 @@ const views: Record<string, ViewRenderer> = {
   boost: renderBoost,
   latency: renderLatency,
   games: renderGames,
+  cs2: renderCs2,
   poe: renderPoe,
   drivers: renderDrivers,
   backup: renderBackup,

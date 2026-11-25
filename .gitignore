@@ -1,25 +1,11 @@
-## Visual Studio & .NET Build Artifacts
-[Bb]in/
-[Oo]bj/
-[Dd]ist/
-[Bb]uild/
-publish/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.DotSettings.user
+# Capivara Booster (Rust / Tauri v2)
 
-## Visual Studio Code (preserve tasks.json)
-.vscode/*
-!.vscode/tasks.json
-!.vscode/launch.json
-*.code-workspace
-
-## Crash Dumps & Memory Caches
-*.dmp
-*.crash
-*.stackdump
+## Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+src-tauri/Cargo.lock
+node_modules/
+ui/dist/
 
 ## Sensitive Environment, Credentials & Local Vaults
 .env
@@ -36,10 +22,12 @@ backups_manifest.json
 *.cer
 *.bak
 *.log
-src/ApexOptimizer/
 
-## Nested legacy copy of the repo (orphan gitlink removed in cleanup)
-/Capivara-Booster/
+## Build Outputs
+publish/
+Output/
+_ISCC_tmp/
+dist/
 
 ## Windows System & OS Artifacts
 Thumbs.db
@@ -47,13 +35,15 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-## Installer Temporary Outputs
-Output/
-_ISCC_tmp/
+## Crash Dumps & Memory Caches
+*.dmp
+*.crash
+*.stackdump
 
-## Rust / Tauri
-src-tauri/target/
-src-tauri/gen/schemas/
-src-tauri/Cargo.lock
-node_modules/
-ui/dist/
+## Editor
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+*.user
+*.suo

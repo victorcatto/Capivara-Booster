@@ -9,9 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -19,25 +17,25 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages --depth 1 2>/dev/null || true
+          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+            git checkout --orphan gh-pages-new FETCH_HEAD
+          else
+            git checkout --orphan gh-pages-new
+          fi
+          git rm -rf . 2>/dev/null || true
+          cp -r docs/site/* .
+          git add -A
+          git commit -m "chore(pages): publica landing (${{ github.sha }})"
+          git push origin gh-pages-new:gh-pages --force

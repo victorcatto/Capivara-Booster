@@ -107,6 +107,7 @@ async function loadReleases() {
       if (arr.length > 0) {
         lastReleases = arr.map((rel) => ({
           tag_name: rel.tag,
+          name: rel.name,
           published_at: rel.date,
           html_url: rel.url,
           body: (rel.notes || []).join('\n'),

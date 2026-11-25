@@ -232,6 +232,28 @@ pub async fn clear_poe_shader_cache(state: State<'_, AppState>) -> Result<(u64, 
 }
 
 #[tauri::command]
+pub async fn scan_drivers(state: State<'_, AppState>) -> Result<Vec<crate::services::drivers::DriverInfo>, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ crate::services::drivers::DriverService::new().scan(&executor).await
+}
+
+#[tauri::command]
+pub async fn get_driver_vendors(state: State<'_, AppState>) -> Result<Vec<crate::services::drivers::DriverUpdate>, String> {
+ let executor = ProcessExecutor;
+ crate::services::drivers::DriverService::new().board_vendor_links(&executor).await
+}
+
+#[tauri::command]
+pub async fn export_driver_backup(state: State<'_, AppState>, dest: String) -> Result<String, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let result = crate::services::drivers::DriverService::new().export_backup(&executor, &dest).await;
+ log(&state, &format!("[Drivers] Backup exportado: {dest}"));
+ result
+}
+
+#[tauri::command]
 pub async fn get_hpet_status(_state: State<'_, AppState>) -> Result<bool, String> {
  Ok(crate::services::system_boost::SystemBoostService::is_hpet_disabled().await)
 }

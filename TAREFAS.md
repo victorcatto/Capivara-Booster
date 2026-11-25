@@ -25,3 +25,6 @@
 - **Depende do Victor:** testes locais do instalador v2 e feedback funcional; certificado de assinatura, se desejar reduzir o aviso do SmartScreen.
 - **Depende do Claude:** confirmar o release, manter CI verde e evoluir a UI após o lançamento.
 - **Depende de outra pessoa:** autoridade certificadora, caso seja usada assinatura de código.
+
+## Em andamento (v2.1.0)
+- Novo menu Driver Booster: rastrear drivers do PC e atualizar baixando direto do fabricante da placa-mãe (ASUS, Gigabyte, MSI, ASRock e afins), com backup e rollback antes de cada instalação.

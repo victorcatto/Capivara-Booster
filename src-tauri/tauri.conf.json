@@ -1,50 +1,57 @@
-{
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CapivaraBooster",
-  "version": "2.0.0",
-  "identifier": "com.capivarabooster.app",
-  "build": {
-    "beforeBuildCommand": "",
-    "devUrl": "http://localhost:5173",
-    "frontendDist": "../ui/dist"
-  },
-  "app": {
-    "withGlobalTauri": true,
-    "windows": [
-      {
-        "title": "Capivara Booster",
-        "width": 1280,
-        "height": 870,
-        "minWidth": 1100,
-        "minHeight": 720,
-        "resizable": true,
-        "fullscreen": false,
-        "decorations": true,
-        "transparent": false,
-        "center": true
-      }
-    ],
-    "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost https://raw.githubusercontent.com https://github.com https://api.github.com; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": ["nsis"],
-    "icon": [
-      "icons/app.ico"
-    ],
-    "resources": [],
-    "windows": {
-      "nsis": {
-        "installerIcon": "icons/app.ico",
-        "languages": ["English", "PortugueseBR"],
-        "displayLanguageSelector": true,
-        "installMode": "perMachine"
-      },
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    }
-  }
+﻿{
+    "$schema":  "https://schema.tauri.app/config/2",
+    "productName":  "CapivaraBooster",
+    "version":  "2.1.0",
+    "identifier":  "com.capivarabooster.app",
+    "build":  {
+                  "beforeBuildCommand":  "",
+                  "devUrl":  "http://localhost:5173",
+                  "frontendDist":  "../ui/dist"
+              },
+    "app":  {
+                "withGlobalTauri":  true,
+                "windows":  [
+                                {
+                                    "title":  "Capivara Booster",
+                                    "width":  1280,
+                                    "height":  870,
+                                    "minWidth":  1100,
+                                    "minHeight":  720,
+                                    "resizable":  true,
+                                    "fullscreen":  false,
+                                    "decorations":  true,
+                                    "transparent":  false,
+                                    "center":  true
+                                }
+                            ],
+                "security":  {
+                                 "csp":  "default-src \u0027self\u0027; connect-src ipc: http://ipc.localhost https://raw.githubusercontent.com https://github.com https://api.github.com; img-src \u0027self\u0027 asset: http://asset.localhost data:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; script-src \u0027self\u0027"
+                             }
+            },
+    "bundle":  {
+                   "active":  true,
+                   "targets":  [
+                                   "nsis"
+                               ],
+                   "icon":  [
+                                "icons/app.ico"
+                            ],
+                   "resources":  [
+
+                                 ],
+                   "windows":  {
+                                   "nsis":  {
+                                                "installerIcon":  "icons/app.ico",
+                                                "languages":  [
+                                                                  "English",
+                                                                  "PortugueseBR"
+                                                              ],
+                                                "displayLanguageSelector":  true,
+                                                "installMode":  "perMachine"
+                                            },
+                                   "certificateThumbprint":  null,
+                                   "digestAlgorithm":  "sha256",
+                                   "timestampUrl":  ""
+                               }
+               }
 }

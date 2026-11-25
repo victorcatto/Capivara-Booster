@@ -66,7 +66,7 @@ impl LowLatencyService {
                 false),
         ];
         items.iter().map(|(id, pt, en, reboot)| {
-            let (title, description, tooltip) = if lang_pt { *pt } else { *en };
+            let (title, description, tooltip) = if lang_pt { (pt[0], pt[1], pt[2]) } else { (en[0], en[1], en[2]) };
             LatencyTweak { id: (*id).into(), title: title.into(), description: description.into(), tooltip: tooltip.into(), requires_reboot: *reboot, is_applied: None }
         }).collect()
     }

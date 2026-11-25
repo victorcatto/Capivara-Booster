@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::services::process_executor::ProcessExecutor;
 use crate::services::registry::{HKCU, HKLM, RegistryService};
@@ -79,10 +79,12 @@ impl PoeService {
         restore.backup_file(&config.display().to_string(), game, "Original PoE config antes do perfil competitivo")?;
 
         let mut ini = read_ini(&config)?;
-        let graphics = ini.entry(section_for(&config)).or_insert_with(|| {
-            let name = if game == "poe2" { "DISPLAY".into() } else { "DISPLAY".into() };
-            (name, Default::default())
-        });
+        let pos = ini.iter().position(|(name, _)| name.eq_ignore_ascii_case("DISPLAY"));
+        let pos = match pos {
+            Some(p) => p,
+            None => { ini.push(("DISPLAY".to_string(), Vec::new())); ini.len() - 1 }
+        };
+        let graphics = &mut ini[pos];
 
         set_option(graphics, "global_illumination_type", if options.global_illumination_off { "0" } else { "2" });
         set_option(graphics, "shadow_type", if options.shadows_min { "no_shadows" } else { "all_low" });
@@ -135,12 +137,13 @@ impl PoeService {
     }
 }
 
-fn section_for(config: &Path) -> (String, std::collections::HashMap<String, String>) {
-    ("DISPLAY".into(), Default::default())
-}
-
-fn set_option(section: &mut (String, std::collections::HashMap<String, String>), key: &str, value: &str) {
-    section.1.insert(key.to_lowercase(), value.to_string());
+fn set_option(section: &mut (String, Vec<(String, String)>), key: &str, value: &str) {
+    let key_lower = key.to_lowercase();
+    if let Some(entry) = section.1.iter_mut().find(|(k, _)| *k == key_lower) {
+        entry.1 = value.to_string();
+    } else {
+        section.1.push((key_lower, value.to_string()));
+    }
 }
 
 /// Lê o .ini preservando ordem de seções e linhas de comentário.

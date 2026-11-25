@@ -10,6 +10,7 @@ import { renderBoost } from './views/boost';
 import { renderLatency } from './views/latency';
 import { renderGames } from './views/games';
 import { renderPoe } from './views/poe';
+import { renderDrivers } from './views/drivers';
 import { renderBackup } from './views/backup';
 
 type ViewRenderer = (host: HTMLElement) => Promise<void> | void;
@@ -22,6 +23,7 @@ const views: Record<string, ViewRenderer> = {
   latency: renderLatency,
   games: renderGames,
   poe: renderPoe,
+  drivers: renderDrivers,
   backup: renderBackup,
 };
 

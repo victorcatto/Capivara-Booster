@@ -10,6 +10,7 @@ pub mod low_latency;
 pub mod poe;
 pub mod process_executor;
 pub mod registry;
+pub mod report;
 pub mod restore;
 pub mod system_boost;
 pub mod telemetry;

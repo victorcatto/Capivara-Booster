@@ -47,6 +47,7 @@ fn main() {
             commands::apply_cs2_profile,
             commands::apply_cs2_configs,
             commands::clear_cs2_caches,
+            commands::generate_full_report,
             commands::get_app_version,
             commands::get_live_telemetry,
             commands::purge_standby_list,

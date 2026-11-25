@@ -305,6 +305,16 @@ pub async fn clear_cs2_caches(state: State<'_, AppState>) -> Result<(u64, u32), 
 }
 
 #[tauri::command]
+pub async fn generate_full_report(state: State<'_, AppState>) -> Result<String, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ log(&state, "[Relatorio] Coletando telemetria, temperatura e plataforma...");
+ let path = crate::services::report::ReportService::new().generate_pdf(&executor).await?;
+ log(&state, &format!("[Relatorio OK] PDF salvo em: {}", path.display()));
+ Ok(path.display().to_string())
+}
+
+#[tauri::command]
 pub fn get_app_version() -> String {
  env!("CARGO_PKG_VERSION").to_string()
 }

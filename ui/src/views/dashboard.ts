@@ -33,6 +33,7 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
       <div class="actions">
         <button class="btn btn-primary" id="btn-quick-boost">${t('Dashboard_QuickBoost_Button', 'Executar Master Boost')}</button>
         <button class="btn btn-secondary" id="btn-standby">${t('Dash_Purge_Standby', 'Liberar RAM (Standby)')}</button>
+        <button class="btn btn-secondary" id="btn-report">${t('Report_Button', 'Relatório Completo')}</button>
         <button class="btn btn-secondary" id="btn-refresh">${t('Dashboard_Refresh_Button', 'Atualizar')}</button>
       </div>
     </div>
@@ -104,6 +105,20 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
       await refresh();
     } catch (err) { addLog('❌ ' + String(err)); }
     finally { btn.disabled = false; }
+  });
+
+  el<HTMLButtonElement>('#btn-report')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = t('Report_Generating', 'Gerando relatório...');
+    try {
+      const path = await invoke<string>('generate_full_report');
+      logCompletion(`${t('Report_Done', 'Relatório salvo na Área de Trabalho')}: ${path}`);
+      btn.textContent = t('Report_Button', 'Relatório Completo');
+    } catch (err) {
+      addLog('❌ ' + String(err));
+      btn.textContent = t('Report_Button', 'Relatório Completo');
+    } finally { btn.disabled = false; }
   });
 
   el<HTMLButtonElement>('#btn-quick-boost')?.addEventListener('click', async (e) => {

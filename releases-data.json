@@ -12,7 +12,6 @@
       "- CS2 competitive profile: IFEO priority/affinity, AppCompat flags, Defender exclusions, shader cache cleanup and live process boost",
       "- Valorant profile: game high priority, Riot Client low priority, Vanguard Defender exclusions and log purge",
       "- League of Legends profile: Low Spec Mode, Close Client, VSync off with automatic config backups",
-      "- Path of Exile 1 & 2 profile: global illumination off, low sound channels, lockstep toggle, GPU preference, Nagle off and safe shader cache cleanup",
       "- Mandatory account login: registration restricted to Gmail, Outlook, Yahoo and Yahoo Brasil domains",
       "- Live execution console with highlighted OK completion lines, hidden by default",
       "## Security",
@@ -25,11 +24,11 @@
       "## Fixed",
       "- Auto-updater keeps the same version.json contract with SHA-256 verification, so v1.1.4 clients upgrade automatically",
       "## PT-BR",
-      "- Reescrita completa em Rust com Tauri v2: executável único e leve, sem dependência do .NET",
-      "- Motor de baixa latência com 11 tweaks reversíveis (Dynamic Tick, MMCSS, USB, filas de mouse/teclado, Nagle, HAGS, ASPM e mais)",
-      "- Perfis competitivos para CS2, Valorant, LoL e Path of Exile com backups e rollback",
-      "- Login obrigatório com cofre de contas protegido por DPAPI e PBKDF2",
-      "- Console ao vivo com confirmação OK ao concluir otimizações",
+      "- Reescrita completa em Rust com Tauri v2: executÃ¡vel Ãºnico e leve, sem dependÃªncia do .NET",
+      "- Motor de baixa latÃªncia com 11 tweaks reversÃ­veis (Dynamic Tick, MMCSS, USB, filas de mouse/teclado, Nagle, HAGS, ASPM e mais)",
+      "- Perfis competitivos para CS2, Valorant e LoL com backups e rollback",
+      "- Login obrigatÃ³rio com cofre de contas protegido por DPAPI e PBKDF2",
+      "- Console ao vivo com confirmacao OK ao concluir otimizacoes",
       "- Nova identidade visual Cyber Mint / Volt Cyan"
     ]
   },
@@ -48,8 +47,8 @@
       "- Live Execution Console hidden by default with a localized Show/Hide toggle in the header",
       "## PT-BR",
       "- Corrigido 404 do auto-atualizador",
-      "- Console de execução oculto por padrão com botão Mostrar/Ocultar localizado",
-      "- app.ico regenerado como ICO multi-resolução real"
+      "- Console de execuÃ§Ã£o oculto por padrÃ£o com botÃ£o Mostrar/Ocultar localizado",
+      "- app.ico regenerado como ICO multi-resoluÃ§Ã£o real"
     ]
   }
 ]

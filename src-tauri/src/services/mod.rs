@@ -4,6 +4,7 @@ pub mod debloat;
 pub mod games;
 pub mod i18n;
 pub mod low_latency;
+pub mod poe;
 pub mod process_executor;
 pub mod registry;
 pub mod restore;

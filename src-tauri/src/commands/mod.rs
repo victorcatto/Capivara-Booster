@@ -202,6 +202,36 @@ pub async fn clear_standby_list(state: State<'_, AppState>) -> Result<bool, Stri
 }
 
 #[tauri::command]
+pub fn detect_poe(state: State<AppState>) -> Vec<crate::services::poe::PoeInstall> {
+ crate::services::poe::PoeService::new().detect()
+}
+
+#[tauri::command]
+pub async fn apply_poe_profile(state: State<'_, AppState>, game: String, options: Option<crate::services::poe::PoeOptions>) -> Result<String, String> {
+ require_auth(&state)?;
+ let opts = options.unwrap_or_default();
+ let executor = ProcessExecutor;
+ let result = {
+ let mut registry = state.registry.lock().unwrap();
+ let mut restore = state.restore.lock().unwrap();
+ crate::services::poe::PoeService::apply_profile(&mut registry, &mut restore, &executor, &game, &opts).await
+ };
+ match &result {
+ Ok(path) => log(&state, &format!("[PoE] Perfil {game} aplicado: {path}")),
+ Err(e) => log(&state, &format!("[PoE Erro] {e}")),
+ }
+ result
+}
+
+#[tauri::command]
+pub async fn clear_poe_shader_cache(state: State<'_, AppState>) -> Result<(u64, u32), String> {
+ require_auth(&state)?;
+ let result = crate::services::poe::PoeService::clear_shader_cache()?;
+ log(&state, &format!("[PoE Cache] Shader cache limpo: {} arquivos", result.1));
+ Ok(result)
+}
+
+#[tauri::command]
 pub async fn get_hpet_status(_state: State<'_, AppState>) -> Result<bool, String> {
  Ok(crate::services::system_boost::SystemBoostService::is_hpet_disabled().await)
 }

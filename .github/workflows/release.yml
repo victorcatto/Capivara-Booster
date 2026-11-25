@@ -43,7 +43,8 @@ jobs:
           (Get-Content Cargo.toml) -replace '^version = ".*"', 'version = "${{ env.VERSION }}"' | Set-Content Cargo.toml
           $conf = Get-Content -Raw tauri.conf.json | ConvertFrom-Json
           $conf.version = "${{ env.VERSION }}"
-          $conf | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
+          # Sem BOM: o build do Tauri não parseia JSON com EF BB BF.
+          [IO.File]::WriteAllText("$PWD/tauri.conf.json", ($conf | ConvertTo-Json -Depth 10), (New-Object System.Text.UTF8Encoding($false)))
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable

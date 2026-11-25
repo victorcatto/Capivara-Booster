@@ -2,7 +2,13 @@ import { invoke } from '../tauri';
 import { t } from '../i18n';
 import { addLog, logCompletion, el } from '../shell';
 
-interface PoeInstall { game: string; found: boolean; config_path: string; source: string; }
+interface PoeInstall {
+  game: 'poe1' | 'poe2';
+  found: boolean;
+  config_path: string;
+  source: 'Standalone' | 'Steam' | 'Epic' | 'Unknown';
+}
+
 interface PoeOptions {
   global_illumination_off: boolean;
   shadows_min: boolean;
@@ -30,9 +36,15 @@ const OPTION_LABELS: Array<{ key: keyof PoeOptions; pt: string; en: string; tip:
 export async function renderPoe(host: HTMLElement): Promise<void> {
   const installs: PoeInstall[] = await invoke('detect_poe');
   const options: PoeOptions = {
-    global_illumination_off: true, shadows_min: true, screen_shake_off: true,
-    dynamic_culling: true, dynamic_resolution: true, renderer_dx12: true,
-    sound_channels_low: true, mute_effects_keep_loot: false, lockstep: true,
+    global_illumination_off: true,
+    shadows_min: true,
+    screen_shake_off: true,
+    dynamic_culling: true,
+    dynamic_resolution: true,
+    renderer_dx12: true,
+    sound_channels_low: true,
+    mute_effects_keep_loot: false,
+    lockstep: true,
   };
 
   const poe1 = installs.find((i) => i.game === 'poe1');
@@ -43,8 +55,16 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
     <p class="subtitle">${t('Poe_Subtitle', 'Perfil competitivo da engine GGG: gráficos, áudio, shaders, rede e CPU com backup automático.')}</p>
 
     <div class="status-grid">
-      <div class="status-card"><h4>PoE 1</h4><strong class="${poe1?.found ? 'text-success' : 'text-muted'}">${poe1?.found ? t('Poe_Found', 'Instalado') : t('Poe_NotFound', 'Não encontrado')}</strong><small class="mono">${poe1?.config_path || ''}</small></div>
-      <div class="status-card"><h4>PoE 2</h4><strong class="${poe2?.found ? 'text-success' : 'text-muted'}">${poe2?.found ? t('Poe_Found', 'Instalado') : t('Poe_NotFound', 'Não encontrado')}</strong><small class="mono">${poe2?.config_path || ''}</small></div>
+      <div class="status-card">
+        <h4>PoE 1</h4>
+        <strong class="${poe1?.found ? 'text-success' : 'text-muted'}">${poe1?.found ? t('Poe_Found', 'Instalado') : t('Poe_NotFound', 'Não encontrado')}</strong>
+        ${poe1?.found ? `<small class="mono">${poe1.source}</small>` : ''}
+      </div>
+      <div class="status-card">
+        <h4>PoE 2</h4>
+        <strong class="${poe2?.found ? 'text-success' : 'text-muted'}">${poe2?.found ? t('Poe_Found', 'Instalado') : t('Poe_NotFound', 'Não encontrado')}</strong>
+        ${poe2?.found ? `<small class="mono">${poe2.source}</small>` : ''}
+      </div>
     </div>
 
     <div class="card section">
@@ -63,7 +83,10 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
     list.innerHTML = OPTION_LABELS.map((option, idx) => `
       <div class="list-row">
         <input type="checkbox" id="poe-opt-${idx}" ${options[option.key] ? 'checked' : ''} />
-        <div><div class="name">${t(`Poe_Opt_${option.key}`, option.pt)}</div><div class="desc text-muted">${option.tip}</div></div>
+        <div>
+          <div class="name">${t(`Poe_Opt_${option.key}`, option.pt)}</div>
+          <div class="desc text-muted">${option.tip}</div>
+        </div>
         <span></span>
       </div>`).join('');
     OPTION_LABELS.forEach((option, idx) => {
@@ -74,10 +97,19 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
   }
 
   const apply = async (game: 'poe1' | 'poe2') => {
-    addLog(`🎃 Path of Exile ${game === 'poe1' ? '1' : '2'}: ${t('Poe_Applying', 'aplicando perfil competitivo...')}`);
-    const path = await invoke<string>('apply_poe_profile', { game, options });
-    addLog(`✅ ${path}`);
-    logCompletion(t('Poe_Applied', 'Perfil PoE aplicado com sucesso'));
+    try {
+      // Backup automático antes de qualquer alteração
+      await invoke('create_restore_point', { description: `CapivaraBooster_PoE_${game === 'poe1' ? '1' : '2'}_Backup` });
+      addLog(`🛡️ Backup criado: PoE ${game === 'poe1' ? '1' : '2'} config`);
+
+      // Aplicar perfil competitivo
+      const path = await invoke<string>('apply_poe_profile', { game, options });
+      addLog(`✅ ${path}`);
+
+      logCompletion(t('Poe_Applied', 'Perfil PoE aplicado com sucesso'));
+    } catch (err) {
+      addLog('❌ ' + String(err));
+    }
   };
 
   el<HTMLButtonElement>('#btn-poe-apply-poe1')?.addEventListener('click', () => apply('poe1').catch((err) => addLog('❌ ' + String(err))));

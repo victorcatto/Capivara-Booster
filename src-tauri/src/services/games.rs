@@ -74,9 +74,12 @@ impl GameOptimizerService {
         let riot_json = PathBuf::from(std::env::var("ProgramData").unwrap_or_else(|_| r"C:\ProgramData".into())).join("Riot Games/RiotClientInstalls.json");
         if let Ok(text) = std::fs::read_to_string(riot_json) {
             if let Ok(value) = serde_json::from_str::<Value>(&text) {
-                if let Some(root) = value.get("league_of_legends.live").and_then(Value::as_str) {
-                    let exe = PathBuf::from(root).join("League of Legends.exe");
-                    if exe.exists() { return detected("lol", &exe); }
+                // Riot JSON uses nested structure: league_of_legends.live (nested object)
+                if let Some(league) = value.get("league_of_legends").and_then(|v| v.get("live")) {
+                    if let Some(live_str) = league.as_str() {
+                        let exe = PathBuf::from(live_str).join("League of Legends.exe");
+                        if exe.exists() { return detected("lol", &exe); }
+                    }
                 }
             }
         }

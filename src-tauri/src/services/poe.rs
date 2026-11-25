@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use crate::services::process_executor::ProcessExecutor;
 use crate::services::registry::{HKCU, HKLM, RegistryService};
 use crate::services::restore::RestoreService;
@@ -15,7 +15,7 @@ pub struct PoeInstall {
     pub source: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PoeOptions {
     pub global_illumination_off: bool,
     pub shadows_min: bool,
@@ -72,7 +72,7 @@ impl PoeService {
     }
 
     /// Aplica o perfil competitivo no .ini com backup prévio via RestoreService.
-    pub fn apply_profile(reg: &mut RegistryService, restore: &mut RestoreService, executor: &ProcessExecutor, game: &str, options: &PoeOptions) -> Result<String, String> {
+    pub async fn apply_profile(reg: &mut RegistryService, restore: &mut RestoreService, executor: &ProcessExecutor, game: &str, options: &PoeOptions) -> Result<String, String> {
         let installs = Self::new().detect();
         let install = installs.iter().find(|i| i.game == game && i.found).ok_or_else(|| format!("Path of Exile {game} não encontrado"))?;
         let config = PathBuf::from(&install.config_path);

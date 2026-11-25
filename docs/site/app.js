@@ -194,6 +194,14 @@ function parseNotes(body) {
       continue;
     }
 
+    // Also accept markdown headings like "## EN-US" or "## PT-BR"
+    const langHeading = line.match(/^#{1,3}\s*\[?(EN-US|PT-BR|EN|PT)\]?\s*$/i);
+    if (langHeading) {
+      if (current) { blocks.push({ langBlock, section: current }); current = null; }
+      langBlock = langHeading[1].toUpperCase().startsWith('EN') ? 'EN' : 'PT';
+      continue;
+    }
+
     const heading = line.match(headingRe);
     if (heading) {
       const title = (heading[1] || heading[2] || heading[3] || '').trim();

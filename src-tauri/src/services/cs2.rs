@@ -91,11 +91,29 @@ impl Cs2Service {
     fn find_cfg_dir(steam_path: &Path) -> Option<PathBuf> {
         let userdata = steam_path.join("userdata");
         let entries = std::fs::read_dir(&userdata).ok()?;
+        // 1) Pasta cfg do CS2 já criada (jogo rodou ao menos uma vez).
         for entry in entries.flatten() {
             let candidate = entry.path().join(r"730\local\cfg");
             if candidate.exists() { return Some(candidate); }
         }
-        None
+        // 2) Sem cfg do jogo: usa a pasta do usuário Steam com config recente
+        //    (localconfig.vdf sempre existe se a Steam já abriu).
+        let entries2 = std::fs::read_dir(&userdata).ok()?;
+        let mut best: Option<(std::time::SystemTime, PathBuf)> = None;
+        for entry in entries2.flatten() {
+            let cfg_common = entry.path().join(r"config");
+            if !cfg_common.exists() { continue; }
+            let localconfig = cfg_common.join("localconfig.vdf");
+            let modified = std::fs::metadata(&localconfig).and_then(|m| m.modified()).unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+            if best.as_ref().map(|(t, _)| modified > *t).unwrap_or(true) {
+                best = Some((modified, entry.path().join(r"730\local\cfg")));
+            }
+        }
+        best.map(|(_, path)| {
+            // Cria a estrutura 730\local\cfg se faltar: o CS2 usa no próximo boot.
+            let _ = std::fs::create_dir_all(&path);
+            path
+        })
     }
 
     /// Tweaks de registro (idempotentes, com rollback via revert_registry).
@@ -226,9 +244,26 @@ Write-Output 'TIMER_OK'
     }
 
     /// Launch options seguras no localconfig.vdf (com backup) e aviso de Steam fechada.
+    /// O arquivo vive em userdata\<steamid>\config\localconfig.vdf.
     pub fn apply_launch_options(restore: &mut RestoreService, cfg_dir: &str, refresh_rate: u32) -> Result<String, String> {
-        let vdf = PathBuf::from(cfg_dir).join("localconfig.vdf");
-        if !vdf.exists() { return Err("localconfig.vdf não encontrado; abra a Steam uma vez para gerá-lo".into()); }
+        let steam_path = Self::steam_path();
+        let mut vdf = PathBuf::from(cfg_dir).join("localconfig.vdf");
+        if !vdf.exists() {
+            // Caminho canônico: userdata\<id>\config\localconfig.vdf (o mais recente).
+            let userdata = steam_path.join("userdata");
+            if let Ok(entries) = std::fs::read_dir(&userdata) {
+                let mut best: Option<(std::time::SystemTime, PathBuf)> = None;
+                for entry in entries.flatten() {
+                    let candidate = entry.path().join(r"config\localconfig.vdf");
+                    let modified = std::fs::metadata(&candidate).and_then(|m| m.modified()).unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+                    if candidate.exists() && best.as_ref().map(|(t, _)| modified > *t).unwrap_or(true) {
+                        best = Some((modified, candidate));
+                    }
+                }
+                if let Some((_, path)) = best { vdf = path; }
+            }
+        }
+        if !vdf.exists() { return Err("localconfig.vdf não encontrado: abra a Steam uma vez com o CS2 instalado".into()); }
         restore.backup_file(&vdf.display().to_string(), "cs2", "localconfig.vdf original antes das launch options")?;
         let content = std::fs::read_to_string(&vdf).map_err(|e| e.to_string())?;
 

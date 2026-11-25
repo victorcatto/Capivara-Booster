@@ -53,23 +53,47 @@ pub struct PoeService;
 impl PoeService {
     pub fn new() -> Self { Self }
 
+    /// Pasta Documents REAL do usuário: registro do Windows (funciona com OneDrive,
+    /// outra unidade ou perfil renomeado), com fallback para USERPROFILE.
     fn documents_dir() -> PathBuf {
+        use winreg::enums::HKEY_CURRENT_USER;
+        use winreg::RegKey;
+        if let Ok(key) = RegKey::predef(HKEY_CURRENT_USER).open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders") {
+            if let Ok(raw) = key.get_value::<String, _>("Personal") {
+                let expanded = crate::services::registry::expand_env_strings(&raw);
+                let p = PathBuf::from(expanded);
+                if p.exists() { return p; }
+            }
+        }
         std::env::var("USERPROFILE").map(|u| PathBuf::from(u).join("Documents")).unwrap_or_else(|_| PathBuf::from(r"C:\Users\Public\Documents"))
     }
 
     pub fn detect(&self) -> Vec<PoeInstall> {
         let docs = Self::documents_dir();
+        // Nomes conhecidos das pastas de config (standalone e Steam usam os mesmos).
+        let poe1_candidates = [
+            docs.join(r"My Games\Path of Exile\production_Config.ini"),
+        ];
+        let poe2_candidates = [
+            docs.join(r"My Games\Path of Exile 2\poe2_production_Config.ini"),
+            docs.join(r"My Games\Path of Exile 2\production_Config.ini"),
+        ];
+        let pick = |candidates: &[PathBuf]| -> Option<PathBuf> {
+            candidates.iter().find(|p| p.exists()).cloned()
+        };
+        let poe1 = pick(&poe1_candidates);
+        let poe2 = pick(&poe2_candidates);
         vec![
             PoeInstall {
                 game: "poe1".into(),
-                found: docs.join(r"My Games\Path of Exile\production_Config.ini").exists(),
-                config_path: docs.join(r"My Games\Path of Exile\production_Config.ini").display().to_string(),
+                found: poe1.is_some(),
+                config_path: poe1.map(|p| p.display().to_string()).unwrap_or_else(|| poe1_candidates[0].display().to_string()),
                 source: "Documents".into(),
             },
             PoeInstall {
                 game: "poe2".into(),
-                found: docs.join(r"My Games\Path of Exile 2\poe2_production_Config.ini").exists(),
-                config_path: docs.join(r"My Games\Path of Exile 2\poe2_production_Config.ini").display().to_string(),
+                found: poe2.is_some(),
+                config_path: poe2.map(|p| p.display().to_string()).unwrap_or_else(|| poe2_candidates[0].display().to_string()),
                 source: "Documents".into(),
             },
         ]

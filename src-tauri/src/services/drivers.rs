@@ -142,40 +142,48 @@ Write-Output ("REBOOT=" + $installResult.RebootRequired)
         else { Err(format!("Windows Update não respondeu para '{safe_name}': {}", result.stderr)) }
     }
 
-    /// Fallback quando o Windows Update não tem o driver: baixa o instalador
-    /// web oficial do fabricante (Intel DSA / NVIDIA app / AMD Adrenalin) e executa.
+    /// Fallback quando o Windows Update não tem o driver: tenta baixar o
+    /// instalador web oficial do fabricante; sites que bloqueiam scripts
+    /// (Akamai da Intel) são abertos no navegador padrão do usuário.
     pub async fn download_and_install_from_vendor(&self, executor: &ProcessExecutor, device_name: &str) -> Result<String, String> {
         let lower = device_name.to_lowercase();
-        let (vendor, url): (&str, &str) = if lower.contains("intel") {
-            ("Intel", "https://www.intel.com/content/www/us/en/detect.html")
+        let (vendor, url, direct): (&str, &str, bool) = if lower.contains("intel") {
+            // A Intel bloqueia Invoke-WebRequest no HTML (Akamai): abrir no navegador.
+            ("Intel", "https://www.intel.com/content/www/us/en/detect.html", false)
         } else if lower.contains("nvidia") || lower.contains("geforce") {
-            ("NVIDIA", "https://www.nvidia.com/en-us/software/nvidia-app/")
+            ("NVIDIA", "https://us.download.nvidia.com/nvapp/client/11.0.4.625/NVIDIA_app_v11.0.4.625.exe", true)
         } else if lower.contains("radeon") || lower.contains("amd") || lower.contains("advanced micro") {
-            ("AMD", "https://www.amd.com/en/support/download/drivers.html")
+            ("AMD", "https://drivers.amd.com/drivers/amd-software-adrenalin-edition-25.12.1-whql-rdna4.exe", true)
         } else if lower.contains("realtek") {
-            ("Realtek", "https://www.realtek.com/Downloads")
+            ("Realtek", "https://www.realtek.com/Downloads", false)
         } else {
             return Err(format!("Nenhuma fonte de download conhecida para '{device_name}'. Use o menu Suporte oficial do fabricante."));
         };
 
-        // O instalador web do fabricante é pequeno e detecta o driver certo sozinho:
-        // baixamos via Invoke-WebRequest (respeita TLS do Windows) e executamos elevado.
-        let dest = std::env::temp_dir().join(format!("capivara-{}-setup.exe", vendor.to_lowercase()));
-        let script = format!(
-            r#"$ErrorActionPreference = 'Stop'
+        if direct {
+            let dest = std::env::temp_dir().join(format!("capivara-{}-setup.exe", vendor.to_lowercase()));
+            let script = format!(
+                r#"$ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -Uri '{url}' -OutFile '{dest}' -UseBasicParsing
+Invoke-WebRequest -Uri '{url}' -OutFile '{dest}' -UseBasicParsing -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CapivaraBooster"
 Start-Process -FilePath '{dest}' -Verb RunAs
 Write-Output 'VENDOR_DOWNLOAD_OK'
 "#,
-            url = url,
-            dest = dest.display()
-        );
-        let result = executor.execute_powershell(&script).await;
-        if !result.stdout.contains("VENDOR_DOWNLOAD_OK") {
-            return Err(format!("Falha ao baixar o instalador da {vendor}: {}", result.stderr));
+                url = url,
+                dest = dest.display()
+            );
+            let result = executor.execute_powershell(&script).await;
+            if result.stdout.contains("VENDOR_DOWNLOAD_OK") {
+                return Ok(format!("Instalador da {vendor} baixado e iniciado: siga o assistente para atualizar '{device_name}'"));
+            }
+            // Download falhou (CDN mudou a versão etc.): cai para abrir o site.
         }
-        Ok(format!("Instalador da {vendor} baixado e iniciado: siga o assistente para atualizar '{device_name}'"))
+
+        let open = executor.execute_cmd(&format!("start \"\" \"{}\"", url.replace('&', "^&"))).await;
+        if open.exit_code != 0 {
+            let _ = executor.execute_powershell(&format!("Start-Process '{url}'")).await;
+        }
+        Ok(format!("Abrimos o site oficial da {vendor} no navegador: baixe o driver de '{device_name}' lá e execute o instalador"))
     }
 
     /// Exporta backup dos drivers atuais (pnputil) para a pasta indicada.

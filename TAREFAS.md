@@ -1,16 +1,16 @@
 # Tarefas do Capivara Booster
 
-## Em andamento
-- Validar a compilação Rust/Tauri v2 e o instalador NSIS no GitHub Actions.
-- Auditar a paridade funcional com a versão WPF v1.1.4 antes de publicar a v2.0.0.
-- Executar testes de integração em Windows para Registro, DPAPI, ponto de restauração, PowerShell, Defender, HPET e instalador.
-- Testar atualização real de uma instalação v1.1.4 para o instalador Rust, usando o mesmo contrato `version.json` e os dois nomes de asset.
-- Definir assinatura de código e política do SmartScreen antes da distribuição pública.
+## Concluído em 2026-11-24
+- Unificação das árvores: `main` agora contém a edição Rust (Tauri v2) e a branch `rust` foi removida.
+- Remoção do legado WPF/.NET: solução, fontes C#, XAML, workflow Inno Setup e scripts antigos.
+- Pipeline de release Rust: tags `v2.*` compilam Tauri + NSIS, geram SHA-256 e publicam o release.
+- Remoção do e-mail confidencial de administrador de todos os arquivos (agora só hash interno).
+- READMEs profissionalizados e atualizados para a edição Rust unificada.
+- Publicação da tag v2.0.0 disparando o build de release no GitHub Actions.
 
-## Após paridade e lançamento Rust
-- Remover os resquícios do projeto WPF/.NET: solução e fontes C#, XAML, workflow .NET/Inno Setup, scripts antigos e configuração obsoleta.
-- Manter assets, documentação e dados de compatibilidade ainda usados pelo instalador/updater; só excluir depois de confirmar referências e usuários de v1.x.
-- Centralizar o projeto em uma única árvore oficial no GitHub depois da migração Rust: comparar `main` e `rust`, integrar a implementação final na branch escolhida, atualizar o branch padrão e remover a branch redundante somente após confirmar que o histórico e o CI estão preservados.
+## Em andamento
+- Acompanhar o build de release v2.0.0 e confirmar os assets publicados.
+- Testes reais em Windows (Registro, DPAPI, ponto de restauração, HPET, Defender) ficam com o Victor nesta máquina.
 
 ## Depois do lançamento da v2.0.0
 - Aplicar a nova identidade visual do Capivara Booster na UI Rust.
@@ -22,6 +22,6 @@
   - Validar contraste, estados de foco, responsividade e PT-BR/EN-US.
 
 ## Dependências
-- **Depende do Victor:** fornecer certificado de assinatura, se desejar reduzir o aviso do SmartScreen; disponibilizar uma máquina Windows de teste com instalação v1.1.4 para o upgrade real.
-- **Depende do Claude:** concluir auditoria, validação e lançamento seguro da v2.0.0; integrar as branches e remover o WPF depois da aprovação técnica.
-- **Depende de outra pessoa:** nenhuma além da autoridade certificadora, caso seja usada assinatura de código.
+- **Depende do Victor:** testes locais do instalador v2 e feedback funcional; certificado de assinatura, se desejar reduzir o aviso do SmartScreen.
+- **Depende do Claude:** confirmar o release, manter CI verde e evoluir a UI após o lançamento.
+- **Depende de outra pessoa:** autoridade certificadora, caso seja usada assinatura de código.

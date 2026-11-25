@@ -572,7 +572,7 @@ pub async fn check_updates(state: State<'_, AppState>) -> Result<UpdateCheckPayl
 pub async fn apply_update(state: State<'_, AppState>, version: String, installer_url: String, sha256: String) -> Result<crate::services::update::DownloadOutcome, String> {
  let updater = UpdateService::new();
  let manifest = crate::services::update::VersionManifest {
-  version,
+  version: version.clone(),
   release_date: String::new(),
   title: String::new(),
   changelog: String::new(),

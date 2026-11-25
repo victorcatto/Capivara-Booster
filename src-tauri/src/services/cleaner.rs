@@ -132,15 +132,3 @@ fn measure_recursive(dir: &PathBuf, bytes: &mut u64, count: &mut u32, errors: &m
         }
     }
 }
-
-fn measure_recursive(dir: &PathBuf, bytes: &mut u64, count: &mut u32, errors: &mut u32) {
-    let entries = match std::fs::read_dir(dir) { Ok(e) => e, Err(_) => { *errors += 1; return; } };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_file() {
-            if let Ok(meta) = std::fs::metadata(&path) { *bytes += meta.len(); *count += 1; } else { *errors += 1; }
-        } else if path.is_dir() {
-            measure_recursive(&path, bytes, count, errors);
-        }
-    }
-}

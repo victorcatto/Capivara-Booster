@@ -1,7 +1,7 @@
 fn main() {
-    // Embute app.manifest (requireAdministrator): sem isso o exe sobe sem elevação
-    // e cada escrita em HKLM falha com "Acesso negado (os error 5)".
-    static MANIFEST: &str = include_str!("app.manifest");
-    embed_resource::compile(MANIFEST, embed_resource::NONE).manifest_optional().unwrap();
-    tauri_build::build()
+    // requireAdministrator no manifesto: sem elevação real cada escrita em HKLM
+    // falha com "Acesso negado (os error 5)" (GameDVR, IFEO, bcdedit).
+    let windows = tauri_build::WindowsAttributes::new().app_manifest(include_str!("app.manifest"));
+    let attrs = tauri_build::Attributes::new().windows_attributes(windows);
+    tauri_build::try_build(attrs).expect("falha ao compilar o projeto Tauri");
 }

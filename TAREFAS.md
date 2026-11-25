@@ -26,10 +26,15 @@
 - **Depende do Claude:** confirmar o release, manter CI verde e evoluir a UI após o lançamento.
 - **Depende de outra pessoa:** autoridade certificadora, caso seja usada assinatura de código.
 
-## Em andamento (v2.1.1)
+## Em andamento (v2.1.2)
+- Corrigir versão travada em 2.0.0 no canto superior esquerdo (deve acompanhar tauri.conf.json).
+- Menu lateral exibindo chaves cruas ([Nav_Poe], [Nav_Drivers], [Nav_LowLatency]): i18n deve carregar antes da primeira renderização.
+- Erro de acesso negado (os error 5) em GameDVR e IFEO do CS2: garantir elevação real (manifest requireAdministrator embutido via build.rs).
+- Banner de atualização no dashboard quando há versão nova (console mostra, UI não oferece botão).
+- Driver Booster completo: comparar data do driver local com o último do site do fabricante; se o do site for mais novo, oferecer link de download e instalação; se o local for atual, mostrar "Updated".
+- Revisar e melhorar os scripts de otimização com foco em Path of Exile 2 e Counter-Strike 2.
 - Melhorar o layout da página do Path of Exile e ajustar os menus do app (organização, espaçamento e hierarquia).
 - Pesquisar na internet por novos scripts de otimização testados e validar cada um antes de adicionar: disponibilizar o máximo possível com confirmação de funcionamento.
 - Revisão gramatical completa (PT-BR e EN-US) da landing page e do README principal do GitHub: texto profissional, bem editado, com as informações mais importantes em destaque.
-- Aumentar o tamanho dos ícones do menu esquerdo (estão pequenos demais) e revisar o layout para responsividade máxima.
+- Aumentar o tamanho dos ícones do menu esquerdo e revisar o layout para responsividade máxima.
 - Mais funções de otimização focadas em Path of Exile 2.
-- Novo menu Driver Booster: rastrear drivers do PC e atualizar baixando direto do fabricante da placa-mãe (ASUS, Gigabyte, MSI, ASRock e afins), com backup e rollback antes de cada instalação.

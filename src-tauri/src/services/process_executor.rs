@@ -25,10 +25,13 @@ impl ProcessExecutor {
 }
 
 async fn run(program: &str, args: &[&str]) -> ExecutionResult {
+    use std::os::windows::process::CommandExt;
     let child = Command::new(program)
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        // CREATE_NO_WINDOW: o app roda os scripts sem abrir console visível.
+        .creation_flags(0x0800_0000)
         .spawn();
 
     let mut child = match child {

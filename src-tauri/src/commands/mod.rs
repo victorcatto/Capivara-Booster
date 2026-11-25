@@ -255,7 +255,7 @@ pub async fn scan_drivers(state: State<'_, AppState>) -> Result<Vec<crate::servi
 }
 
 #[tauri::command]
-pub async fn get_driver_vendors(state: State<'_, AppState>) -> Result<Vec<crate::services::drivers::DriverUpdate>, String> {
+pub async fn get_driver_vendors(state: State<'_, AppState>) -> Result<Vec<(String, String)>, String> {
  let executor = ProcessExecutor;
  crate::services::drivers::DriverService::new().board_vendor_links(&executor).await
 }

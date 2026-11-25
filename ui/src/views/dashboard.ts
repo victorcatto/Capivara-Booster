@@ -9,6 +9,8 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
     <h1>${t('Dashboard_Title', 'Visão Geral do Sistema')}</h1>
     <p class="subtitle">${t('Dashboard_Subtitle', 'Diagnósticos de timers de hardware e aceleração do sistema.')}</p>
 
+    <div id="update-banner"></div>
+
     <div class="status-grid">
       <div class="status-card"><h4>${t('Dashboard_OsCard_Title', 'Sistema')}</h4><strong id="os-info">Windows 10/11 (64-bit)</strong><small style="color:var(--accent-cyan);">${t('Dashboard_OsCard_Target', 'Alvo: Windows 10/11')}</small></div>
       <div class="status-card"><h4>${t('Dashboard_HpetCard_Title', 'HPET')}</h4><strong id="hpet-status" class="text-muted">${t('Checking', 'Verificando...')}</strong><small>${t('Dashboard_HpetCard_Desc', 'Latência DPC')}</small></div>
@@ -36,6 +38,35 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
     </div>`;
 
   const refresh = async () => {
+    // Banner de atualização: aparece quando há versão nova, com botão de aplicar.
+    try {
+      const update = await invoke<{ available: boolean; version: string | null; installer_url: string | null; sha256: string | null; changelog: string | null }>('check_updates');
+      const banner = el<HTMLDivElement>('#update-banner');
+      if (banner && update.available && update.version && update.installer_url && update.sha256) {
+        banner.innerHTML = `
+          <div class="card" style="border-color:var(--accent-cyan);margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:240px;">
+              <h3 style="margin-bottom:4px;">🚀 ${t('Update_Available', 'Nova versão disponível')}: v${update.version}</h3>
+              <p class="subtitle" style="margin:0;white-space:pre-line;">${(update.changelog || '').slice(0, 260)}</p>
+            </div>
+            <button class="btn btn-primary" id="btn-apply-update">${t('Update_Install', 'Atualizar agora')}</button>
+          </div>`;
+        el<HTMLButtonElement>('#btn-apply-update')?.addEventListener('click', async (e) => {
+          const btn = e.currentTarget as HTMLButtonElement;
+          btn.disabled = true;
+          btn.textContent = t('Update_Downloading', 'Baixando atualização...');
+          try {
+            await invoke('apply_update', { version: update.version, installerUrl: update.installer_url, sha256: update.sha256 });
+            addLog('🚀 ' + t('Update_Running', 'Instalador iniciado: conclua a instalação e o app reabrirá atualizado'));
+          } catch (err) {
+            addLog('❌ ' + String(err));
+            btn.disabled = false;
+            btn.textContent = t('Update_Install', 'Atualizar agora');
+          }
+        });
+      }
+    } catch { /* update check falhou: segue sem banner */ }
+
     const hpetStatus = el<HTMLSpanElement>('#hpet-status');
     if (hpetStatus) {
       try {

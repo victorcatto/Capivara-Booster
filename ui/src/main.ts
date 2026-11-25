@@ -67,6 +67,14 @@ async function boot(): Promise<void> {
 
   el<HTMLButtonElement>('#btn-check-updates')?.addEventListener('click', () => checkUpdates(false));
 
+  // Versão do app no sidebar: reflete tauri.conf.json, nunca hardcoded.
+  try {
+    const { getVersion } = (window as any).__TAURI__.app;
+    const version = await getVersion();
+    const badge = document.querySelector('[data-app-version]');
+    if (badge && version) badge.textContent = `v${version} Rust Edition`;
+  } catch { /* fallback: mantém o texto do HTML */ }
+
   window.addEventListener('language-changed', () => {
     navigate(currentView);
   });

@@ -1,5 +1,24 @@
 [
   {
+    "tag": "v2.3.2",
+    "name": "Capivara Booster v2.3.2 (Rust Edition)",
+    "date": "2026-11-25",
+    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.3.2",
+    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.3.2/CapivaraBooster-Setup.exe",
+    "notes": [
+      "## Added",
+      "- Driver Booster vendor fallback: when Windows Update has no newer driver, the app downloads and runs the manufacturer's official web installer directly (Intel Driver & Support Assistant, NVIDIA app, AMD Adrenalin, Realtek) with elevation, per detected device",
+      "## Fixed",
+      "- Cache & Junk Cleaner on read-only files: the attribute is cleared (hidden attrib -R) before removal, so previously \"failed\" files are now deleted; files locked by another process are reported as \"in use, skipped\" instead of errors",
+      "- Counter-Strike 2 detection: SteamPath from the registry comes with forward slashes and is now normalized; SteamLibrary folders on all drives (C-F) are scanned as fallback plus libraryfolders.vdf; the cs2.exe path is checked in both known layouts",
+      "- Cleaner console wording: \"[Cleaner OK] ... N files cleaned, M in use skipped\" (was an error line for normal in-use files)",
+      "## PT-BR",
+      "- Driver Booster com fallback do fabricante: quando o Windows Update não tem o driver, o app baixa e executa o instalador web oficial direto (Intel DSA, NVIDIA app, AMD Adrenalin, Realtek) com elevação, conforme o dispositivo",
+      "- Limpeza de arquivos read-only: o atributo é limpo antes de remover (antes dava \"erro\"); arquivos travados por outro processo aparecem como \"em uso, pulados\"",
+      "- Detecção do Counter-Strike 2 corrigida: caminho da Steam normalizado (slashes), varredura de SteamLibrary em todas as unidades e dupla checagem do cs2.exe"
+    ]
+  },
+  {
     "tag": "v2.3.1",
     "name": "Capivara Booster v2.3.1 (Rust Edition)",
     "date": "2026-11-25",
@@ -21,32 +40,6 @@
       "- Path of Exile 2: DLSS no preset Quality e ReBAR/autoHDR forçados",
       "- Fim definitivo das chaves cruas no menu: dicionários de tradução embutidos no executável",
       "- Botão da limpeza com texto profissional \"Executar Limpeza\""
-    ]
-  },
-  {
-    "tag": "v2.3.0",
-    "name": "Capivara Booster v2.3.0 (Rust Edition)",
-    "date": "2026-11-25",
-    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.3.0",
-    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.3.0/CapivaraBooster-Setup.exe",
-    "notes": [
-      "## Added",
-      "- Live dashboard telemetry: CPU model with current load %, RAM usage bar, GPU name, active power plan and uptime, all from a single PowerShell query; new \"Free RAM (Standby)\" action via NtSetSystemInformation",
-      "- Cache & Junk Cleaner redesigned: summary hero (total found, selected, freeable now), professional table with category and real on-disk sizes, Select All / Recommended presets, per-item progress and safely skipped in-use files reported at the end",
-      "- Update completion feedback: typed DownloadOutcome (bytes, path, launched) with a localized success banner; Windows Update driver installs now surface reboot-required explicitly",
-      "- CI/CD: every release now syncs READMEs, defines the repo homepage as the landing page and regenerates releases-data.json without BOM",
-      "## Changed",
-      "- All PowerShell/CMD scripts remain windowless (CREATE_NO_WINDOW) and log exact [OK] results per module",
-      "## Fixed",
-      "- In-app updater stuck without completion signal after download",
-      "- Driver status row not updating after a successful one-click update",
-      "## Performance",
-      "- Dashboard telemetry consolidated into one WMI/PowerShell round-trip (was several)",
-      "## PT-BR",
-      "- Telemetria ao vivo no painel: CPU com carga, barra de RAM, GPU, plano de energia e uptime em uma consulta; botão Liberar RAM (Standby)",
-      "- Limpar Cache repaginado: resumo (total, selecionados, liberável agora), tabela com categoria e tamanhos reais, Selecionar tudo/Recomendados, progresso por item e arquivos em uso pulados com segurança",
-      "- Confirmação de conclusão do atualizador com banner localizado; atualização de driver agora avisa reinício obrigatório",
-      "- CI/CD: cada release sincroniza READMEs, define a homepage do repo e regenera o JSON da landing sem BOM"
     ]
   }
 ]

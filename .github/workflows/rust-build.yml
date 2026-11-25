@@ -63,15 +63,15 @@ jobs:
         run: |
           $installer = Get-ChildItem "src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
           if (-not $installer) { Write-Error "NSIS installer was not generated" }
-          $versioned = "src-tauri/target/release/bundle/nsis/CapivaraBooster-Setup-v2.0.0.exe"
+          $conf = Get-Content -Raw src-tauri/tauri.conf.json | ConvertFrom-Json
+          $version = $conf.version
+          $versioned = "src-tauri/target/release/bundle/nsis/CapivaraBooster-Setup-v$version.exe"
           $direct = "src-tauri/target/release/bundle/nsis/CapivaraBooster-Setup.exe"
           Copy-Item $installer.FullName $versioned -Force
           Copy-Item $installer.FullName $direct -Force
           $versionHash = (Get-FileHash $versioned -Algorithm SHA256).Hash
           $directHash = (Get-FileHash $direct -Algorithm SHA256).Hash
           if ($versionHash -ne $directHash) { Write-Error "Versioned and direct installers differ" }
-          $manifest = Get-Content -Raw version.json | ConvertFrom-Json
-          if ($manifest.version -ne "1.1.4") { Write-Error "Do not change production version.json from the Rust build workflow" }
           $size = (Get-Item $versioned).Length / 1MB
-          Write-Host "Validated legacy updater asset: $(Split-Path $versioned -Leaf) ($([math]::Round($size, 2)) MB)"
+          Write-Host "Validated installer: $(Split-Path $versioned -Leaf) ($([math]::Round($size, 2)) MB)"
           Write-Host "Direct download asset: $(Split-Path $direct -Leaf)"

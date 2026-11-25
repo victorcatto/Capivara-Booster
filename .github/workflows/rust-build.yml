@@ -21,19 +21,41 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Rust Cache
-        uses: swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          cache-all-crates: true
+
+      - name: Cache Tauri CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/tauri.exe
+          key: tauri-cli-v2-stable-windows
+
+      - name: Install Tauri CLI (skip se cacheado)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "$env:USERPROFILE\.cargo\bin\tauri.exe")) {
+            cargo install tauri-cli --version "^2" --locked
+          } else {
+            Write-Host "tauri-cli cacheado: pulando compilacao"
+          }
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ui/node_modules
+          key: npm-ui-${{ hashFiles('ui/package-lock.json') }}
+
       - name: Build Frontend (UI)
         working-directory: ui
         run: |
-          npm install
+          if (-not (Test-Path node_modules)) { npm ci }
           npm run build
 
       - name: Check Rust Compilation
@@ -43,9 +65,6 @@ jobs:
       - name: Run Rust Tests
         working-directory: src-tauri
         run: cargo test
-
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
 
       - name: Build and Bundle Rust Installer
         working-directory: src-tauri

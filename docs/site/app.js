@@ -26,6 +26,7 @@ const I18N = {
     how2_title: 'Create account and pick a profile', how2_desc: 'Login is required. Create the restore point, pick your game profile or apply the recommended latency profile.',
     how3_title: 'Play with lower latency', how3_desc: 'Follow everything on the live console. Revert any tweak in one click if needed.',
     notes_title: 'Latest updates', notes_sub: 'The two most recent releases, straight from the official repository.', notes_loading: 'Loading patch notes…',
+    notes_latest: 'Latest', notes_previous: 'Previous release', notes_fallback: 'See the release page for the full changelog.',
     q1: 'Is it safe?', a1: 'Yes. Every optimization creates a restore point and can be reverted in one click. The code is open on GitHub.',
     q2: 'Is it free?', a2: 'Yes. Capivara Booster is free and open source (MIT).',
     q3: 'Does it work on my Windows?', a3: 'Windows 10 and 11, 64-bit, with WebView2 (preinstalled on updated Windows).',
@@ -56,6 +57,7 @@ const I18N = {
     how2_title: 'Crie conta e escolha o perfil', how2_desc: 'O login é obrigatório. Crie o ponto de restauração, escolha o perfil de jogo ou aplique o perfil recomendado de latência.',
     how3_title: 'Jogue com menos latência', how3_desc: 'Acompanhe tudo no console ao vivo. Reverta qualquer ajuste em um clique se precisar.',
     notes_title: 'Últimas novidades', notes_sub: 'As duas versões mais recentes, direto do repositório oficial.', notes_loading: 'Carregando patch notes…',
+    notes_latest: 'Mais recente', notes_previous: 'Versão anterior', notes_fallback: 'Veja a página da release para o changelog completo.',
     q1: 'É seguro?', a1: 'Sim. Cada otimização cria ponto de restauração e pode ser revertida em um clique. O código é aberto no GitHub.',
     q2: 'Preciso pagar?', a2: 'Não. O Capivara Booster é gratuito e open source (MIT).',
     q3: 'Funciona no meu Windows?', a3: 'Windows 10 e 11, 64 bits, com WebView2 (pré-instalado no Windows atualizado).',
@@ -139,26 +141,84 @@ function renderNotes(releases) {
     host.innerHTML = `<div class="note"><div class="note-head"><span class="note-version">v2.0.0</span><span class="note-date">2026-11-25</span><a class="note-download" href="${RELEASES_URL}" rel="noopener">${I18N[lang].notes_get} →</a></div><ul><li>${I18N[lang].a1}</li></ul></div>`;
     return;
   }
-  host.innerHTML = releases.map((rel) => {
+  host.innerHTML = releases.map((rel, index) => {
     const date = new Date(rel.published_at).toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'en-US');
-    const body = (rel.body || '')
-      .split('\n')
-      .filter((line) => line.trim().length > 0)
-      .slice(0, 12)
-      .map((line) => `<li>${line.replace(/^[-*]\s*/, '').replace(/[<>]/g, '')}</li>`)
-      .join('');
+    const sections = parseNotes(rel.body || '');
     const asset = (rel.assets || []).find((a) => a.name === INSTALLER);
     const download = asset ? asset.browser_download_url : RELEASES_URL;
+    const label = index === 0 ? I18N[lang].notes_latest : I18N[lang].notes_previous;
+    const bodyHtml = sections.length > 0
+      ? sections.map((section) => `
+          <div class="note-section">
+            <h4 class="note-section-title ${sectionClass(section.title)}">${escapeHtml(section.title)}</h4>
+            <ul>${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+          </div>`).join('')
+      : `<ul><li>${escapeHtml((rel.body || I18N[lang].notes_fallback).slice(0, 400))}</li></ul>`;
     return `
-      <article class="note">
+      <article class="note reveal">
         <div class="note-head">
-          <span class="note-version">${rel.tag_name}</span>
+          <span class="note-version">${escapeHtml(rel.tag_name)}</span>
+          ${index === 0 ? `<span class="pill pill-cyan">${label}</span>` : ''}
           <span class="note-date">${date}</span>
           <a class="note-download" href="${download}" rel="noopener">${I18N[lang].notes_get} →</a>
         </div>
-        <ul>${body}</ul>
+        ${rel.name ? `<p class="note-title">${escapeHtml(rel.name)}</p>` : ''}
+        ${bodyHtml}
       </article>`;
   }).join('');
+  observeReveals();
+}
+
+/// Divide o corpo da release em seções por título (##, **Título**, [EN-US] etc.).
+function parseNotes(body) {
+  const lines = body.split('\n');
+  const sections = [];
+  let current = null;
+  const headingRe = /^(?:#{1,3}\s*(.+)|\*\*(.+)\*\*|\[([^\]]+)\]\s*)$/;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.length === 0) continue;
+    const heading = line.match(headingRe);
+    if (heading) {
+      const title = (heading[1] || heading[2] || heading[3] || '').trim();
+      if (title.length > 0 && title.length < 60) {
+        current = { title, items: [] };
+        sections.push(current);
+        continue;
+      }
+    }
+    const bullet = line.match(/^[-*•]\s*(.+)$/);
+    if (bullet) {
+      if (!current) { current = { title: I18N[lang].changelog_title, items: [] }; sections.push(current); }
+      current.items.push(bullet[1].trim());
+    } else if (current && current.items.length === 0 && line.length > 20) {
+      current.items.push(line);
+    }
+  }
+  return sections.filter((section) => section.items.length > 0);
+}
+
+function sectionClass(title) {
+  const normalized = title.toLowerCase();
+  if (normalized.includes('added') || normalized.includes('adicion')) return 'st-added';
+  if (normalized.includes('fix') || normalized.includes('corrig')) return 'st-fixed';
+  if (normalized.includes('perf') || normalized.includes('desempen')) return 'st-perf';
+  if (normalized.includes('secur') || normalized.includes('segur')) return 'st-sec';
+  if (normalized.includes('chang') || normalized.includes('mudan')) return 'st-changed';
+  return 'st-info';
+}
+
+function escapeHtml(value) {
+  return value.replace(/[<>&"]/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[ch]));
+}
+
+function observeReveals() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 }
 
 const saved = localStorage.getItem('capivara-lang');

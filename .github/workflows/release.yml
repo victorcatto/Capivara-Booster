@@ -131,10 +131,11 @@ jobs:
           $data = $releases | ForEach-Object {
             [ordered]@{
               tag = $_.tag_name
+              name = $_.name
               date = ($_.published_at).ToString("yyyy-MM-dd")
               url = $_.html_url
               installer = if ($asset = $_.assets | Where-Object name -eq "CapivaraBooster-Setup.exe") { $asset.browser_download_url } else { $_.html_url }
-              notes = ($_.body -split "`n" | Where-Object { $_.Trim() -ne "" } | Select-Object -First 14)
+              notes = ($_.body -split "`n" | Where-Object { $_.Trim() -ne "" } | Select-Object -First 60)
             }
           }
           $data | ConvertTo-Json -Depth 5 | Set-Content docs/site/releases-data.json -Encoding utf8
@@ -152,6 +153,7 @@ jobs:
           name: "Capivara Booster v${{ env.VERSION }} (Rust Edition)"
           draft: false
           prerelease: false
+          body_path: release-notes.md
           files: |
             ${{ env.INSTALLER_PATH }}
             ${{ env.DIRECT_INSTALLER_PATH }}

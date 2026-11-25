@@ -7,6 +7,7 @@ import { renderDashboard } from './views/dashboard';
 import { renderDebloat } from './views/debloat';
 import { renderCleaner } from './views/cleaner';
 import { renderBoost } from './views/boost';
+import { renderLatency } from './views/latency';
 import { renderGames } from './views/games';
 import { renderBackup } from './views/backup';
 
@@ -17,6 +18,7 @@ const views: Record<string, ViewRenderer> = {
   debloat: renderDebloat,
   cleaner: renderCleaner,
   boost: renderBoost,
+  latency: renderLatency,
   games: renderGames,
   backup: renderBackup,
 };

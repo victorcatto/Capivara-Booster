@@ -1,6 +1,6 @@
 import { invoke } from '../tauri';
 import { t } from '../i18n';
-import { addLog, el } from '../shell';
+import { addLog, logCompletion, el } from '../shell';
 
 interface GameDetection { game_id: string; found: boolean; executable_path: string; }
 
@@ -59,7 +59,7 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
       if (bar) bar.style.width = '80%';
       await refresh();
       if (bar) bar.style.width = '100%';
-      addLog('✅ ' + t('Boost_Done', 'Master Boost concluído'));
+      logCompletion(t('Boost_Done', 'Master Boost concluído'));
     } catch (err) {
       addLog('❌ ' + String(err));
     } finally {

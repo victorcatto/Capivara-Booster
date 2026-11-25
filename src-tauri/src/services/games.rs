@@ -109,6 +109,43 @@ impl GameOptimizerService {
         Ok(())
     }
 
+    /// Otimizações adicionais de CS2: prioridade do processo vivo, GPU priority
+    /// no perfil Multimedia e exclusões do Defender para o executável do jogo.
+    pub fn prepare_cs2(reg: &mut RegistryService, exe_path: &str) -> Result<String, String> {
+        Self::apply_priority_affinity(reg, "cs2.exe", 3, true)?;
+        if Path::new(exe_path).exists() { Self::apply_app_compat(reg, exe_path)?; }
+        let games = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
+        reg.set_dword(HKLM, games, "GPU Priority", 8)?;
+        reg.set_dword(HKLM, games, "Priority", 6)?;
+        reg.set_string(HKLM, games, "Scheduling Category", "High")?;
+        let exe_dir = Path::new(exe_path).parent().unwrap_or(Path::new(""));
+        let steam_library = exe_dir.and_then(|p| p.ancestors().nth(3)).unwrap_or(Path::new(""));
+        Ok(format!(
+            "foreach ($p in @('cs2.exe','steam.exe')) {{ Add-MpPreference -ExclusionProcess $p -ErrorAction SilentlyContinue }}; Add-MpPreference -ExclusionPath '{}' -ErrorAction SilentlyContinue; Add-MpPreference -ExclusionPath '{}' -ErrorAction SilentlyContinue",
+            ps_quote(&steam_library.join("shadercache").display().to_string()),
+            ps_quote(&steam_library.display().to_string())
+        ))
+    }
+
+    /// Limpa o shader cache do Steam do CS2 (shadercache/730).
+    pub fn clear_cs2_shader_cache(exe_path: &str) -> Result<(u64, u32), String> {
+        let exe_dir = Path::new(exe_path).parent().ok_or("caminho do CS2 inválido")?;
+        let library = exe_dir.ancestors().nth(3).ok_or("biblioteca Steam inválida")?;
+        let cache = library.join("shadercache").join("730");
+        if !cache.exists() { return Ok((0, 0)); }
+        let (mut bytes, mut count, _errors) = (0u64, 0u32, 0u32);
+        measure_tree(&cache, &mut bytes, &mut count);
+        std::fs::remove_dir_all(&cache).map_err(|e| format!("não foi possível limpar o shader cache: {e}"))?;
+        Ok((bytes, count))
+    }
+
+    /// Define prioridade em tempo real para o cs2.exe em execução agora.
+    pub async fn boost_live_cs2(executor: &ProcessExecutor) -> Result<bool, String> {
+        let script = "Get-Process cs2 -ErrorAction SilentlyContinue | ForEach-Object { $_.PriorityClass = 'High' }";
+        let result = executor.execute_powershell(script).await;
+        Ok(result.exit_code == 0)
+    }
+
     pub fn apply_app_compat(reg: &mut RegistryService, exe_path: &str) -> Result<(), String> {
         let flags = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE";
         reg.set_string(HKCU, r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", exe_path, flags)
@@ -168,6 +205,18 @@ fn quoted_value(value: &str) -> Option<String> {
     Some(value[start..end].to_string())
 }
 fn ps_quote(value: &str) -> String { value.replace('\'', "''") }
+
+fn measure_tree(dir: &Path, bytes: &mut u64, count: &mut u32) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() {
+            if let Ok(meta) = std::fs::metadata(&path) { *bytes += meta.len(); *count += 1; }
+        } else if path.is_dir() {
+            measure_tree(&path, bytes, count);
+        }
+    }
+}
 
 fn patch_game_cfg(path: &Path) -> Result<(), String> {
     let mut lines = if path.exists() { std::fs::read_to_string(path).map_err(|e| e.to_string())?.lines().map(str::to_string).collect::<Vec<_>>() } else { Vec::new() };

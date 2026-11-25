@@ -21,6 +21,13 @@ export function el<T extends HTMLElement>(sel: string): T {
 export async function refreshAuth(): Promise<void> {
   state.auth = await invoke<AuthState>('get_auth_state');
   renderAuth();
+  if (!state.auth.authenticated) {
+    openAuthModal(true);
+  }
+}
+
+export function isAuthed(): boolean {
+  return state.auth?.authenticated ?? false;
 }
 
 export function renderAuth(): void {
@@ -38,11 +45,11 @@ export function renderAuth(): void {
     });
   } else {
     authArea.innerHTML = `<button class="btn btn-secondary" id="btn-login">👤 ${t('Auth_LoginRegister', 'Login / Cadastro')}</button>`;
-    el<HTMLButtonElement>('#btn-login')?.addEventListener('click', openAuthModal);
+    el<HTMLButtonElement>('#btn-login')?.addEventListener('click', () => openAuthModal(false));
   }
 }
 
-export function openAuthModal(): void {
+export function openAuthModal(mandatory: boolean): void {
   const modal = el<HTMLDivElement>('#auth-modal');
   if (!modal) return;
   modal.classList.add('open');
@@ -50,8 +57,9 @@ export function openAuthModal(): void {
     <div class="modal-card">
       <div class="modal-head">
         <h3>${t('Auth_Modal_Subtitle', 'Acesse sua conta')}</h3>
-        <button class="btn-close" id="auth-close">✕</button>
+        ${mandatory ? '' : '<button class="btn-close" id="auth-close">✕</button>'}
       </div>
+      ${mandatory ? `<p class="hint" style="margin-bottom:10px;">${t('Auth_Mandatory', 'Login obrigatório para usar o Capivara Booster.')}</p>` : ''}
       <div class="mode-switch">
         <button id="mode-login" class="active">${t('Auth_Modal_TabLogin', 'Entrar')}</button>
         <button id="mode-register">${t('Auth_Modal_TabSignUp', 'Cadastrar')}</button>
@@ -75,9 +83,11 @@ export function openAuthModal(): void {
   el('#mode-login')?.addEventListener('click', () => setMode(false));
   el('#mode-register')?.addEventListener('click', () => setMode(true));
   el('#auth-close')?.addEventListener('click', () => modal.classList.remove('open'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  if (!mandatory) {
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  }
 
-  el('#auth-submit')?.addEventListener('click', async () => {
+  const submit = async () => {
     const email = el<HTMLInputElement>('#auth-email')?.value ?? '';
     const pass = el<HTMLInputElement>('#auth-pass')?.value ?? '';
     const err = el<HTMLParagraphElement>('#auth-error');
@@ -90,10 +100,13 @@ export function openAuthModal(): void {
       modal.classList.remove('open');
       await refreshAuth();
       addLog('✅ ' + (currentLanguage() === 'pt-BR' ? 'Autenticado com sucesso' : 'Authenticated successfully'));
+      window.dispatchEvent(new CustomEvent('auth-changed'));
     } catch (e: any) {
       err!.textContent = String(e);
     }
-  });
+  };
+  el('#auth-submit')?.addEventListener('click', submit);
+  el('#auth-pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
 }
 
 export function addLog(msg: string): void {
@@ -102,6 +115,17 @@ export function addLog(msg: string): void {
   const line = document.createElement('div');
   line.className = 'log-line';
   line.textContent = msg;
+  list.appendChild(line);
+  list.scrollTop = list.scrollHeight;
+}
+
+/// Log destacado de conclusão: linha "OK" em verde para o usuário.
+export function logCompletion(label: string): void {
+  const list = el<HTMLDivElement>('#console-list');
+  if (!list) return;
+  const line = document.createElement('div');
+  line.className = 'log-line log-ok';
+  line.textContent = `[OK] ${label}`;
   list.appendChild(line);
   list.scrollTop = list.scrollHeight;
 }

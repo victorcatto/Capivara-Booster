@@ -1,6 +1,6 @@
 import { invoke } from '../tauri';
 import { t } from '../i18n';
-import { addLog, el } from '../shell';
+import { addLog, logCompletion, el } from '../shell';
 
 interface GameDetection { game_id: string; found: boolean; executable_path: string; install_directory: string; }
 
@@ -37,7 +37,11 @@ export async function renderGames(host: HTMLElement): Promise<void> {
       try {
         addLog(`🎮 ${game.name}: ${t('Game_Optimizing', 'aplicando perfil competitivo...')}`);
         await invoke('optimize_game', { gameId: game.id, exePath: detection.executable_path });
-        addLog(`✅ ${game.name} ${t('Game_Optimized', 'otimizado')}`);
+        if (game.id === 'cs2') {
+          const cleared = await invoke<[number, number]>('clear_cs2_shader_cache', { exePath: detection.executable_path }).catch(() => [0, 0] as [number, number]);
+          if (cleared[1] > 0) addLog(`🧹 Shader cache CS2: ${(cleared[0] / 1024 / 1024).toFixed(1)} MB limpos`);
+        }
+        logCompletion(`${game.name} ${t('Game_Optimized', 'otimizado com sucesso')}`);
       } catch (err) {
         addLog('❌ ' + String(err));
       } finally {

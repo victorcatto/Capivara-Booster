@@ -1,6 +1,6 @@
 import { invoke } from '../tauri';
 import { t } from '../i18n';
-import { addLog, el } from '../shell';
+import { addLog, logCompletion, el } from '../shell';
 
 interface CleanerItem { id: string; display_name: string; description: string; target_path: string; size_bytes: number; is_selected: boolean; }
 interface CleaningSummary { total_bytes_cleaned: number; files_deleted: number; errors_count: number; }
@@ -76,12 +76,13 @@ export async function renderCleaner(host: HTMLElement): Promise<void> {
     try {
       for (const item of items.filter((i) => i.is_selected && i.id !== 'dns')) {
         addLog(`🧹 ${item.display_name}...`);
-        const result = await invoke<CleaningSummary>('clean_item', { itemId: item.id, targetPath: item.target_path });
+        const result = await invoke<CleaningSummary>('clean_item', { itemId: item.id });
         total.total_bytes_cleaned += result.total_bytes_cleaned;
         total.files_deleted += result.files_deleted;
         total.errors_count += result.errors_count;
       }
       addLog(`✅ ${total.files_deleted} ${t('Files_Cleaned', 'arquivos removidos')} (${fmtBytes(total.total_bytes_cleaned)})`);
+      logCompletion(t('Cleaner_Finished', 'Limpeza concluída'));
       await renderCleaner(host);
     } catch (err) {
       addLog('❌ ' + String(err));

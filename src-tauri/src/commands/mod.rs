@@ -31,6 +31,12 @@ fn log(state: &AppState, msg: &str) {
  if logs.len() > 1000 { logs.remove(0); }
 }
 
+/// Bloqueia comandos de sistema quando não há sessão autenticada.
+fn require_auth(state: &AppState) -> Result<(), String> {
+ let auth = state.auth.lock().unwrap();
+ if auth.is_authenticated() { Ok(()) } else { Err("login obrigatório: autentique-se para usar as otimizações".into()) }
+}
+
 #[derive(Serialize)]
 pub struct LogPayload {
  pub items: Vec<String>,
@@ -118,7 +124,8 @@ pub fn get_bloatware_items(state: State<AppState>) -> Vec<BloatwareItem> {
 }
 
 #[tauri::command]
-pub async fn clean_item(state: State<'_, AppState>, item_id: String, target_path: String) -> Result<CleaningSummary, String> {
+pub async fn clean_item(state: State<'_, AppState>, item_id: String) -> Result<CleaningSummary, String> {
+ require_auth(&state)?;
  let executor = ProcessExecutor;
  if item_id == "dns" {
   let result = executor.execute_cmd("ipconfig /flushdns").await;
@@ -135,7 +142,7 @@ pub async fn clean_item(state: State<'_, AppState>, item_id: String, target_path
  }
  let (bytes, count, errors) = {
   let cleaner = state.cleaner.lock().unwrap();
-  let result = cleaner.clean_directory_contents(&target_path)?;
+  let result = cleaner.clean_item(&item_id)?;
   result
  };
  if item_id == "windows_update" { executor.execute_cmd("net start wuauserv").await; }
@@ -145,10 +152,53 @@ pub async fn clean_item(state: State<'_, AppState>, item_id: String, target_path
 
 #[tauri::command]
 pub async fn flush_dns(state: State<'_, AppState>) -> Result<bool, String> {
+ require_auth(&state)?;
  let executor = ProcessExecutor;
  let result = executor.execute_cmd("ipconfig /flushdns").await;
  log(&state, "[Cleaner] DNS flush executado");
  Ok(result.exit_code == 0)
+}
+
+#[tauri::command]
+pub fn get_latency_tweaks(state: State<AppState>) -> Vec<crate::services::low_latency::LatencyTweak> {
+ let lang_pt = state.i18n.lock().unwrap().is_portuguese();
+ crate::services::low_latency::LowLatencyService::tweaks(lang_pt)
+}
+
+#[tauri::command]
+pub async fn apply_latency_tweak(state: State<'_, AppState>, tweak_id: String) -> Result<bool, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let result = {
+ let mut registry = state.registry.lock().unwrap();
+ crate::services::low_latency::LowLatencyService::apply_tweak(&mut registry, &executor, &tweak_id).await
+ };
+ match &result {
+ Ok(_) => log(&state, &format!("[Latency] {tweak_id} aplicado")),
+ Err(e) => log(&state, &format!("[Latency Erro] {tweak_id}: {e}")),
+ }
+ result
+}
+
+#[tauri::command]
+pub async fn revert_latency_tweak(state: State<'_, AppState>, tweak_id: String) -> Result<bool, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let result = {
+ let mut registry = state.registry.lock().unwrap();
+ crate::services::low_latency::LowLatencyService::revert_tweak(&mut registry, &executor, &tweak_id).await
+ };
+ log(&state, &format!("[Latency] {tweak_id} revertido"));
+ result
+}
+
+#[tauri::command]
+pub async fn clear_standby_list(state: State<'_, AppState>) -> Result<bool, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let result = crate::services::low_latency::LowLatencyService::clear_standby_list(&executor).await;
+ log(&state, "[Latency] Standby list otimizada");
+ result
 }
 
 #[tauri::command]
@@ -158,6 +208,7 @@ pub async fn get_hpet_status(_state: State<'_, AppState>) -> Result<bool, String
 
 #[tauri::command]
 pub async fn set_hpet_state(state: State<'_, AppState>, disable: bool) -> Result<bool, String> {
+ require_auth(&state)?;
  let result = crate::services::system_boost::SystemBoostService::set_hpet_state(disable).await;
  log(&state, if disable { "[HPET] Desativado" } else { "[HPET] Restaurado" });
  result
@@ -165,6 +216,7 @@ pub async fn set_hpet_state(state: State<'_, AppState>, disable: bool) -> Result
 
 #[tauri::command]
 pub async fn enable_ultimate_performance(state: State<'_, AppState>) -> Result<String, String> {
+ require_auth(&state)?;
  let result = crate::services::system_boost::SystemBoostService::enable_ultimate_performance().await;
  if let Ok(ref guid) = result { log(&state, &format!("[Power Plan] Ativo: {guid}")); }
  result
@@ -172,6 +224,7 @@ pub async fn enable_ultimate_performance(state: State<'_, AppState>) -> Result<S
 
 #[tauri::command]
 pub async fn apply_system_optimizations(state: State<'_, AppState>) -> Result<bool, String> {
+ require_auth(&state)?;
  let result = {
  let mut boost = state.boost.lock().unwrap();
  boost.apply_optimizations()
@@ -185,6 +238,7 @@ pub async fn apply_system_optimizations(state: State<'_, AppState>) -> Result<bo
 
 #[tauri::command]
 pub async fn revert_system_optimizations(state: State<'_, AppState>) -> Result<bool, String> {
+ require_auth(&state)?;
  let result = {
  let mut boost = state.boost.lock().unwrap();
  boost.revert_optimizations()
@@ -195,6 +249,7 @@ pub async fn revert_system_optimizations(state: State<'_, AppState>) -> Result<b
 
 #[tauri::command]
 pub async fn revert_registry(state: State<'_, AppState>) -> Result<usize, String> {
+ require_auth(&state)?;
  let mut registry = state.registry.lock().unwrap();
  let n = registry.revert_all_tracked()?;
  log(&state, &format!("[Rollback] {n} valores restaurados"));
@@ -203,6 +258,7 @@ pub async fn revert_registry(state: State<'_, AppState>) -> Result<usize, String
 
 #[tauri::command]
 pub async fn create_restore_point(state: State<'_, AppState>, description: String) -> Result<bool, String> {
+ require_auth(&state)?;
  let executor = ProcessExecutor;
  let safe_description = powershell_single_quote(&description);
  let script = format!(
@@ -215,6 +271,7 @@ pub async fn create_restore_point(state: State<'_, AppState>, description: Strin
 
 #[tauri::command]
 pub async fn remove_bloatware(state: State<'_, AppState>, items: Vec<String>) -> Result<u32, String> {
+ require_auth(&state)?;
  if items.is_empty() { return Ok(0); }
  let safe_patterns = items.iter().map(|p| powershell_single_quote(p)).collect::<Vec<_>>();
  let patterns = safe_patterns.join("','");
@@ -233,6 +290,7 @@ fn powershell_single_quote(value: &str) -> String {
 
 #[tauri::command]
 pub async fn disable_telemetry(state: State<'_, AppState>) -> Result<bool, String> {
+ require_auth(&state)?;
  {
  let mut registry = state.registry.lock().unwrap();
  registry.set_dword(HKLM, r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry", 0)?;
@@ -261,19 +319,23 @@ pub async fn detect_game(state: State<'_, AppState>, game_id: String) -> Result<
 
 #[tauri::command]
 pub async fn optimize_game(state: State<'_, AppState>, game_id: String, exe_path: String) -> Result<bool, String> {
+ require_auth(&state)?;
  let executor = ProcessExecutor;
  match game_id.to_lowercase().as_str() {
  "cs2" => {
+ let script = {
  let mut registry = state.registry.lock().unwrap();
- GameOptimizerService::apply_priority_affinity(&mut registry, "cs2.exe", 3, true)?;
- if !exe_path.is_empty() { GameOptimizerService::apply_app_compat(&mut registry, &exe_path)?; }
- drop(registry);
+ GameOptimizerService::prepare_cs2(&mut registry, &exe_path)?
+ };
+ let result = executor.execute_powershell(&script).await;
+ if result.exit_code != 0 { return Err(result.stderr); }
  if !exe_path.is_empty() {
  let path = std::path::Path::new(&exe_path);
  let cfg = path.parent().and_then(|p| p.ancestors().nth(3)).map(|p| p.join("csgo/cfg/autoexec.cfg")).ok_or("caminho de CS2 inválido")?;
  if let Some(parent) = cfg.parent() { std::fs::create_dir_all(parent).map_err(|e| e.to_string())?; }
  std::fs::write(&cfg, GameOptimizerService::generate_cs2_autoexec()).map_err(|e| e.to_string())?;
  }
+ GameOptimizerService::boost_live_cs2(&executor).await;
  }
  "valorant" => {
  let script = {
@@ -299,7 +361,16 @@ pub async fn optimize_game(state: State<'_, AppState>, game_id: String, exe_path
 }
 
 #[tauri::command]
+pub async fn clear_cs2_shader_cache(state: State<'_, AppState>, exe_path: String) -> Result<(u64, u32), String> {
+ require_auth(&state)?;
+ let result = GameOptimizerService::clear_cs2_shader_cache(&exe_path)?;
+ log(&state, &format!("[CS2 Cache] Shader cache limpo: {} bytes, {} arquivos", result.0, result.1));
+ Ok(result)
+}
+
+#[tauri::command]
 pub async fn revert_game(state: State<'_, AppState>, game_id: String, exe_path: String) -> Result<usize, String> {
+ require_auth(&state)?;
  let mut registry = state.registry.lock().unwrap();
  let mut restore = state.restore.lock().unwrap();
  let restored = GameOptimizerService::revert_game(&mut registry, &mut restore, &game_id, &exe_path)?;

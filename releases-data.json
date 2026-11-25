@@ -1,5 +1,29 @@
 [
   {
+    "tag": "v2.3.1",
+    "name": "Capivara Booster v2.3.1 (Rust Edition)",
+    "date": "2026-11-25",
+    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.3.1",
+    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.3.1/CapivaraBooster-Setup.exe",
+    "notes": [
+      "## Added",
+      "- Dedicated Counter-Strike 2 menu: full competitive profile in one click with per-tweak status (mouse accel off, MMCSS GPU Priority 8, fullscreen exclusive + Game DVR off, high-performance GPU, IFEO priority/affinity, Ultimate power plan, USB selective suspend off, HPET, Nagle/TCPNoDelay, 0.5 ms timer resolution)",
+      "- CS2 game configs with automatic backup: competitive cs2_video.txt (fullscreen exclusive, VSync off, 2X MSAA, Reflex on, boost player contrast), autoexec.cfg FPS Boost (sky, water, decals, bullet trails and death animation off) and launch options (-nojoy -freq <hz> +fps_max 0) injected into localconfig.vdf",
+      "- CS2 auto-detection via Steam registry and libraryfolders.vdf; shader cache cleanup for AppID 730 plus D3DSCache/NVIDIA/AMD",
+      "- Path of Exile 2 community tweaks: DLSS upscaler on the Quality preset, ReBAR/autoHDR forced in UserGpuPreferences",
+      "## Fixed",
+      "- Sidebar showing raw i18n keys ([Nav_Poe], [Nav_Drivers]) inside the installed app: localization dictionaries are now embedded in the binary (include_str), no longer dependent on files next to the executable",
+      "- Cleaner button wording: \"Run Cleanup\" instead of purge (PT-BR and EN-US)",
+      "## PT-BR",
+      "- Menu dedicado do Counter-Strike 2: perfil competitivo em 1 clique com status de cada tweak (mouse sem aceleração, MMCSS, tela cheia exclusiva + Game DVR off, GPU alta, IFEO prioridade/afinidade, energia Ultimate, USB suspend off, HPET, Nagle e timer 0,5 ms)",
+      "- Configs do CS2 com backup automático: cs2_video.txt competitivo, autoexec.cfg FPS Boost (céu, água, decals, rastros de tiro e animação pós-morte off) e launch options injetadas no localconfig.vdf",
+      "- Detecção automática da instalação via Steam; limpeza do shader cache (AppID 730 + D3DSCache/NVIDIA/AMD)",
+      "- Path of Exile 2: DLSS no preset Quality e ReBAR/autoHDR forçados",
+      "- Fim definitivo das chaves cruas no menu: dicionários de tradução embutidos no executável",
+      "- Botão da limpeza com texto profissional \"Executar Limpeza\""
+    ]
+  },
+  {
     "tag": "v2.3.0",
     "name": "Capivara Booster v2.3.0 (Rust Edition)",
     "date": "2026-11-25",
@@ -23,41 +47,6 @@
       "- Limpar Cache repaginado: resumo (total, selecionados, liberável agora), tabela com categoria e tamanhos reais, Selecionar tudo/Recomendados, progresso por item e arquivos em uso pulados com segurança",
       "- Confirmação de conclusão do atualizador com banner localizado; atualização de driver agora avisa reinício obrigatório",
       "- CI/CD: cada release sincroniza READMEs, define a homepage do repo e regenera o JSON da landing sem BOM"
-    ]
-  },
-  {
-    "tag": "v2.2.0",
-    "name": "Capivara Booster v2.2.0 (Rust Edition)",
-    "date": "2026-11-25",
-    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.2.0",
-    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.2.0/CapivaraBooster-Setup.exe",
-    "notes": [
-      "## Added",
-      "- Driver Booster: one-click driver updates via Windows Update (WUApiLib) with pnputil backup beforehand, professional status table (Updated / Update available) and a full hardware profile card (exact motherboard model, BIOS, CPU, GPU, RAM, Windows build)",
-      "- Updater popup: discreet bottom-right notification with release notes and a working \"Update now\" button (downloads, verifies SHA-256 and launches the elevated installer); Dismiss remembers the version",
-      "- App version badge in the sidebar now reads the real version at runtime via get_app_version",
-      "- Path of Exile 2: texture quality, engine multithreading and VSync off added to the competitive profile, plus a live boost (high process priority and 0.5 ms timer resolution) when the game is already running",
-      "- Counter-Strike 2: NtSetTimerResolution-based 0.5 ms timer resolution while boosting",
-      "## Changed",
-      "- Console redesigned as an \"Activity\" feed: only important events (OK confirmations, errors, module actions) are shown, capped at 80 lines, with a new pill-style toggle button",
-      "- All PowerShell/CMD scripts run with CREATE_NO_WINDOW: zero console popups",
-      "- requireAdministrator manifest embedded via tauri_build: GameDVR, CS2 IFEO and bcdedit writes no longer fail with access denied",
-      "## Fixed",
-      "- Access denied (os error 5) on GameDVR and CS2 IFEO registry writes",
-      "- Sidebar showing raw i18n keys ([Nav_Poe], [Nav_Drivers], [Nav_LowLatency])",
-      "- HPET card stuck on \"Verificando...\" (bcdedit now queried with proper quoting and a fallback)",
-      "- Driver scan returning empty lists (ConvertTo-Json broke on large WMI output; now CSV)",
-      "- TaskDialogIndirect startup crash by declaring Common Controls v6 in the manifest",
-      "## PT-BR",
-      "- Driver Booster: atualização de driver em 1 clique via Windows Update com backup pnputil antes, tabela profissional de status e card com o hardware completo (placa-mãe exata, BIOS, CPU, GPU, RAM e Windows)",
-      "- Popup de atualização discreto com notas da versão e botão \"Atualizar agora\" funcional (download com SHA-256 e instalador elevado); botão Depois lembra a versão",
-      "- Versão real do app no canto superior esquerdo, lida em tempo de execução",
-      "- Path of Exile 2: qualidade de textura, multithreading da engine e VSync off no perfil competitivo, mais boost ao vivo (prioridade alta e timer de 0,5 ms) com o jogo aberto",
-      "- Counter-Strike 2: resolução de timer de 0,5 ms via NtSetTimerResolution",
-      "- Console redesenhado como feed de \"Atividade\": só eventos importantes, limite de 80 linhas e novo botão pílula",
-      "- Scripts PowerShell/CMD com CREATE_NO_WINDOW: nenhuma janela piscando",
-      "- Fim do \"Acesso negado\" no GameDVR, IFEO do CS2 e bcdedit (manifesto embutido)",
-      "- Fim das chaves cruas no menu, do HPET eterno em \"Verificando...\" e do crash TaskDialogIndirect na abertura"
     ]
   }
 ]

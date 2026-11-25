@@ -87,7 +87,7 @@ jobs:
       - name: Build Frontend (UI)
         working-directory: ui
         run: |
-          if (-not (Test-Path node_modules)) { npm ci }
+          if (-not (Test-Path node_modules)) { npm install --no-audit --no-fund }
           npm run build
 
       - name: Run Rust Tests

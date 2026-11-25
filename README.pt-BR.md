@@ -66,6 +66,13 @@ O Windows SmartScreen pode exibir um aviso porque o instalador open source não 
 - **Counter-Strike 2:** prioridade/afinidade por IFEO, AppCompat, cache de shaders e `autoexec.cfg` competitivo
 - **VALORANT:** prioridade do jogo e Riot Client, AppCompat, logs e exclusões do Defender
 - **League of Legends:** modo de baixo consumo, fechamento do cliente, logs, backups e exclusões do Defender
+- **Path of Exile 1 & 2:** perfil competitivo da engine GGG
+  - Iluminação global desativada (ganho de 30 a 75% de FPS em mapas densos), sombras no mínimo, screen shake off
+  - Culling dinâmico e resolução dinâmica para estabilidade em endgame
+  - Canais de som reduzidos (o áudio do PoE é um gargalo real de CPU) e opção de mutar efeitos mantendo o filtro de loot
+  - Alternador Lockstep/Predictive com aviso de uso (Lockstep para ping baixo e Hardcore)
+  - Preferência de GPU de alto desempenho, Nagle off e limpeza segura de shader cache
+  - Backup automático do `.ini` original antes de qualquer alteração
 
 ### Conta e atualizações
 
@@ -77,9 +84,15 @@ O Windows SmartScreen pode exibir um aviso porque o instalador open source não 
 - Manifesto de atualização no GitHub com verificação SHA-256
 - Console de execução oculto por padrão e disponível por botão
 
-## Modelo de segurança
+## Segurança & Transparência
 
-O Capivara Booster altera configurações do Windows somente depois de uma ação explícita do usuário. Pontos de restauração e backups de arquivos são criados antes das operações destrutivas compatíveis. Os valores de registro alterados pelo aplicativo são rastreados para reversão em Backup & Restore.
+O Capivara Booster altera configurações do Windows somente depois de uma ação explícita do usuário.
+
+- **Ponto de restauração do Windows** criado antes das operações destrutivas compatíveis
+- **Backup automático de arquivos** antes de modificar qualquer configuração de jogo (`game.cfg` do LoL, `autoexec.cfg` do CS2, `.ini` do Path of Exile), restaurável em um clique
+- **Rastreamento de registro**: cada chave alterada pelo aplicativo é registrada com o valor original, permitindo rollback total em Backup & Restore
+- **Open source**: todo o código está neste repositório, auditável antes de instalar
+- **Atualizações verificadas**: o auto-updater valida o SHA-256 do instalador antes de executá-lo
 
 Revise cada otimização antes de aplicá-la. Hardware, edição do Windows, drivers, política do antivírus e atualizações dos jogos podem alterar o resultado de um ajuste.
 

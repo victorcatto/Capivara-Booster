@@ -66,6 +66,13 @@ Windows SmartScreen may display a warning because the open-source installer is n
 - **Counter-Strike 2:** IFEO priority/affinity, AppCompat flags, shader cache cleanup, and competitive `autoexec.cfg`
 - **VALORANT:** game and Riot Client priority, AppCompat flags, logs, and Defender exclusions
 - **League of Legends:** low-spec mode, close-client settings, logs, backups, and Defender exclusions
+- **Path of Exile 1 & 2:** competitive profile for the GGG engine
+  - Global illumination off (30-75% FPS gain in dense maps), minimum shadows, screen shake off
+  - Dynamic culling and dynamic resolution for stable endgame frame times
+  - Reduced sound channels (PoE audio is a real CPU bottleneck) with an option to mute effects while keeping the loot filter audible
+  - Lockstep/Predictive toggle with guidance (Lockstep for low ping and Hardcore)
+  - High-performance GPU preference, Nagle off, and safe shader cache cleanup
+  - Automatic `.ini` backup before any change
 
 ### Account and updates
 
@@ -77,9 +84,15 @@ Windows SmartScreen may display a warning because the open-source installer is n
 - GitHub-based update manifest with SHA-256 verification
 - Live execution console hidden by default and available with a toggle
 
-## Safety model
+## Safety & Transparency
 
-Capivara Booster changes Windows settings only after explicit user action. Restore points and file backups are created before supported destructive operations. Registry values changed by the application are tracked so they can be reverted from Backup & Restore.
+Capivara Booster changes Windows settings only after explicit user action.
+
+- **Windows restore point** created before supported destructive operations
+- **Automatic file backups** before modifying any game config (LoL `game.cfg`, CS2 `autoexec.cfg`, Path of Exile `.ini`), restorable in one click
+- **Registry tracking**: every key the app changes is recorded with its original value, enabling full rollback from Backup & Restore
+- **Open source**: the entire codebase lives in this repository and can be audited before installing
+- **Verified updates**: the auto-updater validates the installer SHA-256 before running it
 
 Always review an optimization before applying it. Hardware, Windows edition, drivers, antivirus policy, and game updates can change the result of a tweak.
 

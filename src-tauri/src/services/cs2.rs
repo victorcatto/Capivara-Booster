@@ -84,11 +84,10 @@ impl Cs2Service {
         None
     }
 
-    /// Tweaks de registro (idempotentes, com rollback central no RestoreService).
+    /// Tweaks de registro (idempotentes, com rollback via revert_registry).
     pub fn apply_registry_tweaks(reg: &mut RegistryService, restore: &mut RestoreService, exe_path: &str) -> Result<Vec<Cs2TweakStatus>, String> {
         let mut status = Vec::new();
-        let snapshot = "Snapshot de registro antes do perfil CS2 (CapivaraBooster)";
-        let _ = restore.snapshot_registry(snapshot);
+        let _ = restore; // rollback das chaves padrão pelo botão Reverter Tweaks de Registro
 
         // Mouse: aceleração off.
         let mouse_ok = reg.set_string(HKCU, r"Control Panel\Mouse", "MouseSpeed", "0").is_ok()

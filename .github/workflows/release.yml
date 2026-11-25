@@ -133,6 +133,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # O Sync Rust Version altera Cargo.toml na working tree do checkout da tag:
+          # descartar antes do checkout para não bloquear a troca de branch.
+          git checkout -- src-tauri/Cargo.toml src-tauri/tauri.conf.json 2>$null
           git fetch origin main
           git checkout -B main origin/main
           git add version.json

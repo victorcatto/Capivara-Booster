@@ -59,22 +59,23 @@ impl CleanerService {
     pub fn get_cleaner_items(&self) -> Vec<CleanerItem> {
         let local = dirs_local_data();
         let windir = std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into());
-        vec![
-            self.item("temp", "User Temp Files (%TEMP%)", "Temporary files created by applications and installers", std::env::temp_dir().display().to_string()),
-            self.item("system_temp", "Windows System Temp", "System-level temporary files", PathBuf::from(&windir).join("Temp").display().to_string()),
-            self.item("prefetch", "Windows Prefetch Cache", "Application startup caching files", PathBuf::from(&windir).join("Prefetch").display().to_string()),
-            self.item("windows_update", "Windows Update Cache", "Downloaded installation packages", PathBuf::from(&windir).join(r"SoftwareDistribution\Download").display().to_string()),
-            self.item("directx_shader", "DirectX Shader Cache", "D3DSCache and DirectX Shader Cache", local.join("D3DSCache").display().to_string()),
-            self.item("nvidia_shader", "NVIDIA DX/GL Shader Cache", "NVIDIA DirectX, OpenGL and Compute caches", local.join(r"NVIDIA\DXCache").display().to_string()),
-            self.item("amd_shader", "AMD DxCache", "AMD Radeon shader pipeline cache", local.join(r"AMD\DxCache").display().to_string()),
-            self.item("recycle_bin", "Recycle Bin", "Files discarded into the Windows Recycle Bin", "RecycleBin".into()),
-            self.item("dns", "DNS Resolver Cache", "Flushes stale IP and DNS lookups", "ipconfig /flushdns".into()),
-        ]
-    }
-
-    fn item(&self, id: &str, name: &str, description: &str, target: String) -> CleanerItem {
-        let (bytes, _count, _errors) = Self::measure(id);
-        CleanerItem { id: id.into(), display_name: name.into(), description: description.into(), target_path: target, size_bytes: bytes, is_selected: true }
+        let defs: Vec<(&str, &str, &str, String)> = vec![
+            ("temp", "User Temp Files (%TEMP%)", "Temporary files created by applications and installers", std::env::temp_dir().display().to_string()),
+            ("system_temp", "Windows System Temp", "System-level temporary files", PathBuf::from(&windir).join("Temp").display().to_string()),
+            ("prefetch", "Windows Prefetch Cache", "Application startup caching files", PathBuf::from(&windir).join("Prefetch").display().to_string()),
+            ("windows_update", "Windows Update Cache", "Downloaded installation packages", PathBuf::from(&windir).join(r"SoftwareDistribution\Download").display().to_string()),
+            ("directx_shader", "DirectX Shader Cache", "D3DSCache and DirectX Shader Cache", local.join("D3DSCache").display().to_string()),
+            ("nvidia_shader", "NVIDIA DX/GL Shader Cache", "NVIDIA DirectX, OpenGL and Compute caches", local.join(r"NVIDIA\DXCache").display().to_string()),
+            ("amd_shader", "AMD DxCache", "AMD Radeon shader pipeline cache", local.join(r"AMD\DxCache").display().to_string()),
+            ("recycle_bin", "Recycle Bin", "Files discarded into the Windows Recycle Bin", "RecycleBin".into()),
+            ("dns", "DNS Resolver Cache", "Flushes stale IP and DNS lookups", "ipconfig /flushdns".into()),
+        ];
+        // Medição em PARALELO (rayon): 9 alvos de disco medidos ao mesmo tempo.
+        use rayon::prelude::*;
+        defs.into_par_iter().map(|(id, name, description, target)| {
+            let (bytes, _count, _errors) = Self::measure(id);
+            CleanerItem { id: id.into(), display_name: name.into(), description: description.into(), target_path: target, size_bytes: bytes, is_selected: true }
+        }).collect()
     }
 
     /// Tamanho somado das pastas do alvo (agregações inclusas).

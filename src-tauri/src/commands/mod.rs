@@ -117,6 +117,18 @@ pub fn get_cleaner_items(state: State<AppState>) -> Vec<CleanerItem> {
  cleaner.get_cleaner_items()
 }
 
+/// Re-scan ao vivo (botão "Procurar cache"): roda fora da main thread
+/// para não travar a UI enquanto o disco é medido.
+#[tauri::command]
+pub async fn rescan_cleaner(state: State<'_, AppState>) -> Result<Vec<CleanerItem>, String> {
+ let items = {
+ let cleaner = state.cleaner.lock().unwrap();
+ cleaner.get_cleaner_items()
+ };
+ log(&state, "[Cleaner] Re-escan concluído");
+ Ok(items)
+}
+
 #[tauri::command]
 pub fn get_bloatware_items(state: State<AppState>) -> Vec<BloatwareItem> {
  let debloat = state.debloat.lock().unwrap();

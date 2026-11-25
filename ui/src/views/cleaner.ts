@@ -35,6 +35,7 @@ export async function renderCleaner(host: HTMLElement): Promise<void> {
         </div>
       </div>
       <div class="cleaner-hero-actions">
+        <button class="btn btn-secondary" id="btn-scan-cache">${t('Cleaner_Scan', 'Procurar cache')}</button>
         <button class="btn btn-secondary" id="btn-select-all">${t('Cleaner_SelectAll', 'Selecionar tudo')}</button>
         <button class="btn btn-secondary" id="btn-select-recommended">${t('Cleaner_SelectRecommended', 'Recomendados')}</button>
         <button class="btn btn-secondary" id="btn-flush-dns">${t('Cleaner_FlushDns_Button', 'Flush DNS')}</button>
@@ -120,6 +121,28 @@ export async function renderCleaner(host: HTMLElement): Promise<void> {
   el<HTMLButtonElement>('#btn-select-all')?.addEventListener('click', () => {
     items.forEach((i) => { i.is_selected = true; });
     renderRows();
+  });
+
+  // Procurar cache: re-escaneia o disco e reconstrói a tela com os tamanhos novos.
+  el<HTMLButtonElement>('#btn-scan-cache')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = t('Cleaner_Scanning', 'Procurando...');
+    try {
+      const fresh: CleanerItem[] = await invoke('rescan_cleaner');
+      // Mantém as escolhas do usuário; atualiza só os tamanhos.
+      items.forEach((old) => {
+        const found = fresh.find((f) => f.id === old.id);
+        if (found) old.size_bytes = found.size_bytes;
+      });
+      renderRows();
+      logCompletion(t('Cleaner_Scan_Done', 'Varredura de cache concluída'));
+    } catch (err) {
+      addLog('❌ ' + String(err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('Cleaner_Scan', 'Procurar cache');
+    }
   });
 
   el<HTMLButtonElement>('#btn-select-recommended')?.addEventListener('click', () => {

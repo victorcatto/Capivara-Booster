@@ -142,47 +142,91 @@ Write-Output ("REBOOT=" + $installResult.RebootRequired)
         else { Err(format!("Windows Update não respondeu para '{safe_name}': {}", result.stderr)) }
     }
 
-    /// Fallback quando o Windows Update não tem o driver: tenta baixar o
-    /// instalador web oficial do fabricante; sites que bloqueiam scripts
-    /// (Akamai da Intel) são abertos no navegador padrão do usuário.
+    /// Fallback quando o Windows Update não tem o driver: pool de fontes
+    /// oficiais por fabricante, em ordem de preferência. Cada link é
+    /// verificado (HTTP HEAD) antes de chegar ao usuário; o primeiro
+    /// funcional ganha. Fontes de página (não-direct .exe) abrem no navegador.
     pub async fn download_and_install_from_vendor(&self, executor: &ProcessExecutor, device_name: &str) -> Result<String, String> {
         let lower = device_name.to_lowercase();
-        let (vendor, url, direct): (&str, &str, bool) = if lower.contains("intel") {
-            // A Intel bloqueia Invoke-WebRequest no HTML (Akamai): abrir no navegador.
-            ("Intel", "https://www.intel.com/content/www/us/en/detect.html", false)
+        let pool: Vec<(&str, &str, bool)> = if lower.contains("intel") {
+            vec![
+                ("Intel DSA (detecção automática)", "https://www.intel.com/content/www/us/en/support/detect.html", false),
+                ("Intel Download Center (DSA 28425)", "https://downloadcenter.intel.com/download/28425/Intel-Driver-Support-Assistant", false),
+            ]
         } else if lower.contains("nvidia") || lower.contains("geforce") {
-            ("NVIDIA", "https://us.download.nvidia.com/nvapp/client/11.0.4.625/NVIDIA_app_v11.0.4.625.exe", true)
+            vec![
+                ("NVIDIA app (download direto)", "https://us.download.nvidia.com/nvapp/client/11.0.4.625/NVIDIA_app_v11.0.4.625.exe", true),
+                ("NVIDIA Download (auto-detect)", "https://www.nvidia.com/Download/index.aspx", false),
+            ]
         } else if lower.contains("radeon") || lower.contains("amd") || lower.contains("advanced micro") {
-            ("AMD", "https://drivers.amd.com/drivers/amd-software-adrenalin-edition-25.12.1-whql-rdna4.exe", true)
+            vec![
+                ("AMD Adrenalin (auto-detect)", "https://www.amd.com/en/support/download/drivers.html", false),
+                ("AMD Drivers & Support", "https://www.amd.com/en/support", false),
+            ]
         } else if lower.contains("realtek") {
-            ("Realtek", "https://www.realtek.com/Downloads", false)
+            vec![
+                ("Realtek Downloads", "https://www.realtek.com/Downloads", false),
+                ("Realtek HD Audio Codec", "https://www.realtek.com/Download/List?cate_id=584", false),
+            ]
         } else {
             return Err(format!("Nenhuma fonte de download conhecida para '{device_name}'. Use o menu Suporte oficial do fabricante."));
         };
 
-        if direct {
-            let dest = std::env::temp_dir().join(format!("capivara-{}-setup.exe", vendor.to_lowercase()));
-            let script = format!(
-                r#"$ErrorActionPreference = 'Stop'
+        // Verifica cada fonte com HTTP HEAD; a primeira OK ganha.
+        let mut checked: Vec<String> = Vec::new();
+        for (label, url, direct) in &pool {
+            let alive = self.url_alive(executor, url).await;
+            checked.push(format!("{label}: {}", if alive { "OK" } else { "indisponivel" }));
+            if !alive { continue; }
+
+            if *direct {
+                let dest = std::env::temp_dir().join("capivara-nvidia-app.exe");
+                let script = format!(
+                    r#"$ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -Uri '{url}' -OutFile '{dest}' -UseBasicParsing -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CapivaraBooster"
-Start-Process -FilePath '{dest}' -Verb RunAs
+Invoke-WebRequest -Uri '{}' -OutFile '{}' -UseBasicParsing -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CapivaraBooster"
+Start-Process -FilePath '{}' -Verb RunAs
 Write-Output 'VENDOR_DOWNLOAD_OK'
 "#,
-                url = url,
-                dest = dest.display()
-            );
-            let result = executor.execute_powershell(&script).await;
-            if result.stdout.contains("VENDOR_DOWNLOAD_OK") {
-                return Ok(format!("Instalador da {vendor} baixado e iniciado: siga o assistente para atualizar '{device_name}'"));
+                    url, dest.display(), dest.display()
+                );
+                let result = executor.execute_powershell(&script).await;
+                if result.stdout.contains("VENDOR_DOWNLOAD_OK") {
+                    return Ok(format!("Instalador da NVIDIA baixado e iniciado: siga o assistente para atualizar '{device_name}'"));
+                }
+                // CDN mudou a versão: tenta a próxima fonte do pool.
+                continue;
             }
-            // Download falhou (CDN mudou a versão etc.): cai para abrir o site.
+
+            let open = executor.execute_powershell(&format!("Start-Process -FilePath '{}'", url.replace('\'', "''"))).await;
+            if open.exit_code == 0 {
+                return Ok(format!("Fonte verificada e aberta ({label}): baixe o driver de '{device_name}' lá e execute o instalador"));
+            }
         }
 
-        // cmd start quebra URLs com & (o popup "\\ não localizado" vinha daí):
-        // PowerShell Start-Process abre o navegador sem interpretar a URL.
-        let open = executor.execute_powershell(&format!("Start-Process -FilePath '{}'", url.replace('\'', "''"))).await;
-        Ok(format!("Abrimos o site oficial da {vendor} no navegador: baixe o driver de '{device_name}' lá e execute o instalador"))
+        Err(format!("Nenhuma fonte do pool respondeu agora. Tentamos: {}. Use o menu Suporte oficial do fabricante.", checked.join("; ")))
+    }
+
+    /// HTTP HEAD rápido (10s): o link só vai para a UI se responder.
+    async fn url_alive(&self, executor: &ProcessExecutor, url: &str) -> bool {
+        let script = format!(
+            r#"$ErrorActionPreference = 'SilentlyContinue'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+try {{
+  $req = [System.Net.WebRequest]::Create('{url}')
+  $req.Method = 'HEAD'
+  $req.Timeout = 10000
+  $req.UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) CapivaraBooster'
+  $resp = $req.GetResponse()
+  $code = [int]$resp.StatusCode
+  $resp.Close()
+  if ($code -ge 200 -and $code -lt 400) {{ Write-Output 'URL_ALIVE' }}
+}} catch {{ }}
+"#,
+            url = url.replace('\'', "''")
+        );
+        let result = executor.execute_powershell(&script).await;
+        result.stdout.contains("URL_ALIVE")
     }
 
     /// Exporta backup dos drivers atuais (pnputil) para a pasta indicada.

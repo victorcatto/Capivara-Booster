@@ -56,6 +56,7 @@ fn main() {
             commands::register,
             commands::logout,
             commands::get_cleaner_items,
+            commands::rescan_cleaner,
             commands::get_bloatware_items,
             commands::clean_item,
             commands::flush_dns,

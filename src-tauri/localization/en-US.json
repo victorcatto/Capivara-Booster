@@ -19,11 +19,13 @@
   "Lang_Portuguese": "PT-BR",
   "Lang_English": "EN-US",
 
-  "Console_Title": "Live Execution Console",
-  "Console_Subtitle": "(Real-time PowerShell, CMD, Registry & File Operations)",
+  "Console_Title": "Activity",
+  "Console_Subtitle": "(Important execution events)",
   "Console_Copy": "Copy Log",
   "Console_Clear": "Clear",
-  "Console_Toggle": "Show / Hide Console",
+  "Console_Toggle": "Console",
+  "Console_Show": "Console",
+  "Console_Hide": "Hide",
 
   "Dashboard_Title": "System Overview & Diagnostic Telemetry",
   "Dashboard_Subtitle": "Live hardware timer diagnostics, esports latency status, and 1-click system acceleration.",

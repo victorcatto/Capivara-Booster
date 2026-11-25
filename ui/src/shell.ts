@@ -109,13 +109,20 @@ export function openAuthModal(mandatory: boolean): void {
   el('#auth-pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
 }
 
+const IMPORTANT_LOG = /\[OK\]|\[Erro\]|\[Updater\]|\[PoE\]|\[Drivers\]|\[Latency\]|\[Cleaner\]|\[Game\]|falha|erro|sucesso|conclu|❌|🚀/i;
+
+function isImportantLog(msg: string): boolean {
+  return IMPORTANT_LOG.test(msg);
+}
+
 export function addLog(msg: string): void {
   const list = el<HTMLDivElement>('#console-list');
-  if (!list) return;
+  if (!list || !isImportantLog(msg)) return;
   const line = document.createElement('div');
-  line.className = 'log-line';
+  line.className = /erro|falha|❌/i.test(msg) ? 'log-line log-error' : 'log-line';
   line.textContent = msg;
   list.appendChild(line);
+  while (list.children.length > 80) list.firstElementChild?.remove();
   list.scrollTop = list.scrollHeight;
 }
 
@@ -140,15 +147,24 @@ export async function refreshLogs(): Promise<void> {
 
 export function setupConsoleToggle(): void {
   const panel = el<HTMLDivElement>('#console-panel');
-  el<HTMLButtonElement>('#btn-console-toggle')?.addEventListener('click', () => {
+  const toggle = el<HTMLButtonElement>('#btn-console-toggle');
+  const label = el<HTMLSpanElement>('#btn-console-toggle-label');
+  const syncToggle = (): void => {
+    toggle?.setAttribute('aria-expanded', String(state.consoleVisible));
+    toggle?.classList.toggle('on', state.consoleVisible);
+    if (label) label.textContent = state.consoleVisible ? t('Console_Hide', 'Ocultar') : t('Console_Show', 'Console');
+  };
+  toggle?.addEventListener('click', () => {
     state.consoleVisible = !state.consoleVisible;
     panel?.classList.toggle('open', state.consoleVisible);
+    syncToggle();
     if (state.consoleVisible) refreshLogs();
   });
   el<HTMLButtonElement>('#btn-console-clear')?.addEventListener('click', async () => {
     await invoke('clear_logs');
     await refreshLogs();
   });
+  syncToggle();
 }
 
 export function setupLanguageSwitch(): void {

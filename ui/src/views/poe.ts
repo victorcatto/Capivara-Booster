@@ -106,6 +106,12 @@ export async function renderPoe(host: HTMLElement): Promise<void> {
       const path = await invoke<string>('apply_poe_profile', { game, options });
       addLog(`✅ ${path}`);
 
+      // Boost ao vivo: se o jogo já está aberto, prioridade alta + timer 0.5ms agora.
+      try {
+        await invoke('boost_live_poe', { game });
+        addLog('🎮 ' + t('Poe_LiveBoost', 'Jogo em execução detectado: prioridade alta e timer 0.5ms aplicados'));
+      } catch { /* jogo fechado: boost vale na próxima abertura via IFEO/GPU pref */ }
+
       logCompletion(t('Poe_Applied', 'Perfil PoE aplicado com sucesso'));
     } catch (err) {
       addLog('❌ ' + String(err));

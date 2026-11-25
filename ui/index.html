@@ -48,14 +48,18 @@
           <button id="lang-en">EN-US</button>
         </div>
         <div id="auth-area" style="display:flex;align-items:center;gap:8px;"></div>
-        <button class="btn btn-secondary btn-sm" id="btn-console-toggle" data-i18n="Console_Toggle">Mostrar / Ocultar Console</button>
+        <button class="console-toggle" id="btn-console-toggle" type="button" aria-expanded="false">
+          <span class="console-toggle-track"><span class="console-toggle-thumb"></span></span>
+          <span id="btn-console-toggle-label" data-i18n="Console_Toggle">Console</span>
+        </button>
       </div>
       <div class="content" id="view-host"></div>
       <div class="console-panel" id="console-panel">
         <div class="console-head">
-          <strong data-i18n="Console_Title">Console de Execução em Tempo Real</strong>
+          <span class="console-dot" aria-hidden="true"></span>
+          <strong data-i18n="Console_Title">Atividade</strong>
           <span class="topbar-spacer"></span>
-          <button class="btn btn-secondary btn-sm" id="btn-console-clear" data-i18n="Console_Clear">Limpar</button>
+          <button class="console-clear" id="btn-console-clear" type="button" data-i18n="Console_Clear">Limpar</button>
         </div>
         <div id="console-list"></div>
       </div>

@@ -38,19 +38,81 @@ body { background: var(--bg); color: var(--text-primary); font-family: "Segoe UI
 .lang-switch button.active { background: var(--accent-cyan); color: var(--bg); }
 .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
 .status-card h4 { color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+
+/* Popup de atualização: discreto, canto inferior direito, só quando há versão nova */
+.update-popup { position: fixed; right: 20px; bottom: 88px; z-index: 60; width: 380px; max-width: calc(100vw - 40px); padding: 18px; background: var(--card); border: 1px solid var(--accent-cyan); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); animation: updateIn 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes updateIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.update-popup-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.update-popup-head strong { color: var(--accent-cyan); font-size: 14px; flex: 1; }
+.update-popup-close { background: transparent; border: 0; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 2px 8px; border-radius: 6px; }
+.update-popup-close:hover { background: var(--card-hover); color: var(--text-primary); }
+.update-popup-notes { color: var(--text-secondary); font-size: 12px; margin-bottom: 14px; max-height: 120px; overflow: auto; white-space: pre-line; }
+.update-popup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Driver Booster: tabela profissional */
+.drv-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.drv-summary { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.drv-chip { padding: 5px 12px; border-radius: 14px; font-size: 12px; font-weight: 600; border: 1px solid; }
+.drv-chip.drv-ok { color: var(--success); border-color: var(--success); }
+.drv-chip.drv-warn { color: var(--warning); border-color: var(--warning); }
+.drv-chip.drv-mute { color: var(--text-secondary); border-color: var(--border); }
+.drv-table-wrap { overflow-x: auto; margin-top: 10px; }
+.drv-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.drv-table th { text-align: left; padding: 10px 12px; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.drv-table td { padding: 10px 12px; border-bottom: 1px solid rgba(38,47,61,0.55); vertical-align: middle; }
+.drv-table tr:hover td { background: rgba(0,229,171,0.03); }
+.drv-name { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.drv-status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.drv-status.drv-ok { background: rgba(63,185,80,0.12); color: var(--success); }
+.drv-status.drv-warn { background: rgba(210,153,34,0.12); color: var(--warning); }
+.drv-status.drv-mute { background: rgba(139,148,158,0.10); color: var(--text-secondary); }
+.drv-action { text-align: right; white-space: nowrap; }
+.hw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.hw-item { padding: 10px 14px; background: rgba(13,17,23,0.6); border: 1px solid var(--border); border-radius: 10px; }
+.hw-item span { display: block; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; margin-bottom: 3px; }
+.hw-item strong { font-size: 12.5px; color: var(--text-primary); word-break: break-word; }
+.update-banner-info { flex: 1; min-width: 240px; }
+.update-banner-info strong { color: var(--accent-cyan); font-size: 14px; }
+.update-banner-notes { color: var(--text-secondary); font-size: 12px; margin-top: 2px; white-space: pre-line; }
+
+/* Responsividade: telas menores reorganizam os cards */
+@media (max-width: 1100px) {
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1280px) {
+  .status-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  #app { grid-template-columns: 230px 1fr; }
+  .content { padding: 22px; }
+}
 .status-card strong { display: block; margin-top: 8px; font-size: 14px; }
 .status-card small { display: block; margin-top: 4px; color: var(--text-secondary); }
 .hero { border: 1px solid var(--accent-cyan); background: var(--card); padding: 24px; margin-bottom: 24px; }
 .hero h2 { color: var(--accent-cyan); font-size: 18px; margin-bottom: 8px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
-.console-panel { display: none; height: 220px; min-height: 120px; background: var(--console-bg); border-top: 1px solid var(--border); }
+.console-panel { display: none; height: 230px; min-height: 120px; background: var(--console-bg); border-top: 1px solid var(--border); }
 .console-panel.open { display: grid; grid-template-rows: auto 1fr; }
-.console-head { padding: 8px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border); }
-.console-head strong { color: var(--text-secondary); font-size: 12px; }
+.console-head { padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.console-head strong { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 .console-head .topbar-spacer { flex: 1; }
-#console-list { overflow: auto; padding: 8px 16px; font: 11px Consolas, monospace; color: var(--text-secondary); }
-.log-line { padding: 2px 0; white-space: pre-wrap; }
+.console-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-cyan); flex-shrink: 0; }
+.console-clear { border: 0; background: transparent; color: var(--text-muted); font-size: 11.5px; cursor: pointer; padding: 4px 10px; border-radius: 6px; }
+.console-clear:hover { background: var(--card-hover); color: var(--text-primary); }
+#console-list { overflow: auto; padding: 10px 16px; font: 11.5px/1.65 Consolas, monospace; color: var(--text-secondary); }
+.log-line { padding: 1px 0; white-space: pre-wrap; border-left: 2px solid transparent; padding-left: 10px; }
+.log-line:hover { background: rgba(0,229,171,0.04); }
 .log-ok { color: var(--success); font-weight: 700; }
+.log-error { color: var(--danger); border-left-color: var(--danger); }
+
+/* Botão de console: pílula com interruptor */
+.console-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.console-toggle:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+.console-toggle-track { width: 30px; height: 16px; border-radius: 10px; background: #22283A; position: relative; transition: background 0.15s; flex-shrink: 0; }
+.console-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-secondary); transition: transform 0.15s, background 0.15s; }
+.console-toggle.on .console-toggle-track { background: rgba(0,229,171,0.25); }
+.console-toggle.on .console-toggle-thumb { transform: translateX(14px); background: var(--accent-cyan); }
+.console-toggle.on { color: var(--accent-cyan); border-color: rgba(0,229,171,0.4); }
 .modal-overlay { display: none; position: fixed; inset: 0; z-index: 5; background: #90000000; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal-card { width: 430px; padding: 28px; border: 1px solid var(--accent-cyan); border-radius: 14px; background: var(--card); box-shadow: 0 20px 80px #0009; }

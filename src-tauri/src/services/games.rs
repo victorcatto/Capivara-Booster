@@ -149,6 +149,20 @@ impl GameOptimizerService {
         Ok(result.exit_code == 0)
     }
 
+    /// Timer resolution de 0.5ms para o CS2 enquanto o processo vive
+    /// (frame pacing mais firme; some quando o app fecha).
+    pub async fn cs2_timer_resolution(executor: &ProcessExecutor) -> Result<bool, String> {
+        let script = r#"
+$sig = '[DllImport("ntdll.dll")] public static extern bool NtSetTimerResolution(uint DesiredResolution, bool SetResolution, out uint CurrentResolution);'
+$type = Add-Type -MemberDefinition $sig -Name 'Win32Time' -Namespace 'Kernel' -PassThru
+$current = 0
+[void]$type::NtSetTimerResolution(5000, $true, [ref]$current)
+Write-Output "TIMER=$current"
+"#;
+        let result = executor.execute_powershell(script).await;
+        Ok(result.stdout.contains("TIMER="))
+    }
+
     pub fn apply_app_compat(reg: &mut RegistryService, exe_path: &str) -> Result<(), String> {
         let flags = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE";
         reg.set_string(HKCU, r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", exe_path, flags)

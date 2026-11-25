@@ -19,11 +19,13 @@
   "Lang_Portuguese": "PT-BR",
   "Lang_English": "EN-US",
 
-  "Console_Title": "Console de Execução em Tempo Real",
-  "Console_Subtitle": "(Logs diretos de PowerShell, CMD, Registro e Arquivos)",
+  "Console_Title": "Atividade",
+  "Console_Subtitle": "(Eventos importantes de execução)",
   "Console_Copy": "Copiar Log",
   "Console_Clear": "Limpar",
-  "Console_Toggle": "Mostrar / Ocultar Console",
+  "Console_Toggle": "Console",
+  "Console_Show": "Console",
+  "Console_Hide": "Ocultar",
 
   "Dashboard_Title": "Visão Geral do Sistema & Diagnóstico",
   "Dashboard_Subtitle": "Diagnósticos de timers de hardware, status de latência esports e aceleração rápida do sistema com 1 clique.",

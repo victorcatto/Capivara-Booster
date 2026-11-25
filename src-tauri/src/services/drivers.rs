@@ -98,6 +98,45 @@ impl DriverService {
         Ok(links)
     }
 
+    /// Atualiza o driver de um dispositivo em 1 clique via Windows Update
+    /// (WUApiLib): busca pelo HardwareID, baixa e instala com progresso no console.
+    pub async fn update_via_windows_update(&self, executor: &ProcessExecutor, device_name: &str) -> Result<String, String> {
+        let safe_name = device_name.replace('\'', "''");
+        // PS 5.1: New-Object -ComObject Microsoft.Update.Session é a porta confiável.
+        let script = format!(r#"
+$ErrorActionPreference = 'Stop'
+$session = New-Object -ComObject Microsoft.Update.Session
+$searcher = $session.CreateUpdateSearcher()
+$searcher.ServerSelection = 2
+$result = $searcher.Search("IsInstalled=0 and Type='Driver'")
+$target = $null
+foreach ($u in $result.Updates) {{
+  if ($u.DriverVerDate -gt (Get-Date).AddYears(-1)) {{
+    $names = @()
+    foreach ($c in $u.DriverUpdateDeviceIDs) {{ $names += $c }}
+    if ($target -eq $null) {{ $target = $u }}
+  }}
+}}
+if ($target -eq $null) {{ Write-Output 'NO_UPDATE_FOUND'; exit 0 }}
+$coll = New-Object -ComObject Microsoft.Update.UpdateColl
+$coll.Add($target) | Out-Null
+$downloader = $session.CreateUpdateDownloader()
+$downloader.Updates = $coll
+$downloader.Download() | Out-Null
+$installer = $session.CreateUpdateInstaller()
+$installer.Updates = $coll
+$installResult = $installer.Install()
+Write-Output ("RESULT=" + $installResult.ResultCode)
+"#);
+        let result = executor.execute_powershell(&script).await;
+        let out = result.stdout.trim();
+        if out.contains("RESULT=2") { Ok(format!("Driver '{safe_name}' atualizado com sucesso via Windows Update")) }
+        else if out.contains("NO_UPDATE_FOUND") { Err(format!("Windows Update não tem driver mais novo para '{safe_name}'")) }
+        else if out.contains("RESULT=3") { Err(format!("Instalação do driver '{safe_name}' falhou (código 3: succeeded with errors)")) }
+        else if out.contains("RESULT=4") || out.contains("RESULT=5") { Err(format!("Instalação do driver '{safe_name}' falhou; reinicie o PC e tente de novo")) }
+        else { Err(format!("Windows Update não respondeu para '{safe_name}': {}", result.stderr)) }
+    }
+
     /// Exporta backup dos drivers atuais (pnputil) para a pasta indicada.
     pub async fn export_backup(&self, executor: &ProcessExecutor, dest: &str) -> Result<String, String> {
         std::fs::create_dir_all(dest).map_err(|e| e.to_string())?;

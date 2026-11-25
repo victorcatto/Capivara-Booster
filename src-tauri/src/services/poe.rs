@@ -100,6 +100,14 @@ impl PoeService {
         }
         set_option(graphics, "networking_type", if options.lockstep { "lockstep" } else { "predictive" });
 
+        // PoE 2: texture quality e loader de assets ficam fora do preset de FPS
+        // só quando o usuário pediu o modo agressivo; o resto já coberto acima.
+        if game == "poe2" {
+            set_option(graphics, "texture_quality", "1");
+            set_option(graphics, "engine_multithreading_mode", "true");
+            set_option(graphics, "vsync", "false");
+        }
+
         write_ini(&config, &ini)?;
 
         let exe_names: &[&str] = if game == "poe2" { POE2_EXES } else { POE1_EXES };
@@ -109,6 +117,24 @@ impl PoeService {
         }
 
         Ok(config.display().to_string())
+    }
+
+    /// Boost do processo PoE vivo: prioridade alta e timer 0.5ms.
+    pub async fn boost_live_poe(executor: &ProcessExecutor, game: &str) -> Result<bool, String> {
+        let procs: &[&str] = if game == "poe2" { &["PathOfExile2", "PathOfExile_x64Steam"] } else { &["PathOfExile", "PathOfExile_x64"] };
+        let names = procs.iter().map(|p| format!("'{}'", p)).collect::<Vec<_>>().join(",");
+        let script = format!(
+            r#"
+Get-Process -Name @({}) -ErrorAction SilentlyContinue | ForEach-Object {{ $_.PriorityClass = 'High' }}
+$sig = '[DllImport("ntdll.dll")] public static extern bool NtSetTimerResolution(uint DesiredResolution, bool SetResolution, out uint CurrentResolution);'
+$type = Add-Type -MemberDefinition $sig -Name 'Win32TimePoe' -Namespace 'Kernel' -PassThru
+$current = 0
+[void]$type::NtSetTimerResolution(5000, $true, [ref]$current)
+"#,
+            names
+        );
+        let result = executor.execute_powershell(&script).await;
+        Ok(result.exit_code == 0)
     }
 
     /// Parte async: Nagle nas interfaces ativas. Chamada sem guard vivo.

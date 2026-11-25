@@ -248,6 +248,20 @@ pub async fn clear_poe_shader_cache(state: State<'_, AppState>) -> Result<(u64, 
 }
 
 #[tauri::command]
+pub async fn boost_live_poe(state: State<'_, AppState>, game: String) -> Result<bool, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ let result = crate::services::poe::PoeService::boost_live_poe(&executor, &game).await;
+ log(&state, &format!("[PoE] Boost ao vivo: {game}"));
+ result
+}
+
+#[tauri::command]
+pub fn get_app_version() -> String {
+ env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
 pub async fn get_hardware_profile(state: State<'_, AppState>) -> Result<crate::services::hardware::HardwareProfile, String> {
  let executor = ProcessExecutor;
  crate::services::hardware::HardwareService::new().profile(&executor).await
@@ -272,6 +286,19 @@ pub async fn export_driver_backup(state: State<'_, AppState>, dest: String) -> R
  let executor = ProcessExecutor;
  let result = crate::services::drivers::DriverService::new().export_backup(&executor, &dest).await;
  log(&state, &format!("[Drivers] Backup exportado: {dest}"));
+ result
+}
+
+#[tauri::command]
+pub async fn update_driver_device(state: State<'_, AppState>, deviceName: String) -> Result<String, String> {
+ require_auth(&state)?;
+ let executor = ProcessExecutor;
+ log(&state, &format!("[Drivers] Atualizando via Windows Update: {deviceName}"));
+ let result = crate::services::drivers::DriverService::new().update_via_windows_update(&executor, &deviceName).await;
+ match &result {
+ Ok(msg) => log(&state, &format!("[Drivers OK] {msg}")),
+ Err(e) => log(&state, &format!("[Drivers Erro] {e}")),
+ }
  result
 }
 

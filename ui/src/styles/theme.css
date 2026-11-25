@@ -1,19 +1,20 @@
 :root {
-  --bg: #0F1015;
-  --sidebar: #12131A;
-  --card: #181A22;
-  --card-hover: #202330;
-  --border: #262A38;
-  --console-bg: #0A0B10;
-  --accent-cyan: #00E5FF;
-  --accent-purple: #9D00FF;
-  --success: #00E676;
-  --warning: #FFB300;
-  --danger: #FF1744;
-  --text-primary: #F4F4F6;
-  --text-secondary: #8E92A4;
-  --text-muted: #5E6377;
-  --gradient: linear-gradient(135deg, #00E5FF 0%, #9D00FF 100%);
+  /* Brand board Capivara Booster 2026 */
+  --bg: #0D1117;
+  --sidebar: #10151C;
+  --card: #161B22;
+  --card-hover: #1D242E;
+  --border: #262F3D;
+  --console-bg: #0A0E13;
+  --accent-cyan: #00E5AB;
+  --accent-purple: #00B8FF;
+  --success: #3FB950;
+  --warning: #D29922;
+  --danger: #F85149;
+  --text-primary: #F0F6FC;
+  --text-secondary: #8B949E;
+  --text-muted: #6E7681;
+  --gradient: linear-gradient(135deg, #00E5AB 0%, #00B8FF 100%);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,6 +65,6 @@ body { background: var(--bg); color: var(--text-primary); font-family: "Segoe UI
 .error { min-height: 20px; margin: 10px 0; color: var(--danger); font-size: 12px; }
 .user-badge { color: var(--text-primary); font-size: 12px; }
 .role-badge { padding: 4px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.role-badge.admin { background: var(--gradient); }
+.role-badge.admin { background: var(--accent-cyan); color: #04141A; }
 .role-badge.user { background: #252A3C; }
 @media (max-width: 900px) { #app { grid-template-columns: 210px 1fr; } .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -1,5 +1,5 @@
 .btn { border: none; border-radius: 8px; padding: 12px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
-.btn-primary { background: var(--gradient); color: #fff; }
+.btn-primary { background: var(--accent-cyan); color: #04141A; }
 .btn-primary:hover { filter: brightness(1.15); }
 .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-secondary { background: var(--card); color: var(--text-primary); border: 1px solid var(--border); }

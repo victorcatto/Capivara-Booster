@@ -23,6 +23,11 @@ export async function renderDrivers(host: HTMLElement): Promise<void> {
     <h1>${t('Drivers_Title', 'Driver Booster')}</h1>
     <p class="subtitle">${t('Drivers_Subtitle', 'Compara a data do driver local com o último do fabricante e aponta o download oficial. Backup completo antes de qualquer instalação.')}</p>
 
+    <div class="card section" id="hardware-card" style="display:none;">
+      <h3>🖥️ ${t('Drivers_Hardware_Header', 'Configuração do Hardware')}</h3>
+      <div id="hardware-details" class="text-muted"></div>
+    </div>
+
     <div class="card section">
       <h3>🧭 ${t('Drivers_Scan_Header', 'Varredura de drivers')}</h3>
       <div class="actions">
@@ -40,6 +45,19 @@ export async function renderDrivers(host: HTMLElement): Promise<void> {
     </div>`;
 
   const vendors: Array<[string, string]> = await invoke('get_driver_vendors');
+  const hwCard = el<HTMLDivElement>('#hardware-card');
+  const hwDetails = el<HTMLDivElement>('#hardware-details');
+  if (hwCard && hwDetails) {
+    try {
+      const hw = await invoke<{ motherboard_vendor: string; motherboard_product: string; cpu_name: string; gpu_names: string[]; ram_gb: number; os_name: string }>('get_hardware_profile');
+      hwCard.style.display = '';
+      hwDetails.innerHTML = `
+        <div><strong>${t('Drivers_Hw_Board', 'Placa-mãe')}:</strong> ${hw.motherboard_vendor} ${hw.motherboard_product}</div>
+        <div><strong>${t('Drivers_Hw_Cpu', 'CPU')}:</strong> ${hw.cpu_name}</div>
+        <div><strong>${t('Drivers_Hw_Gpu', 'GPU')}:</strong> ${hw.gpu_names.join(', ') || 'N/A'}</div>
+        <div><strong>${t('Drivers_Hw_Ram', 'RAM')}:</strong> ${hw.ram_gb} GB · <strong>${t('Drivers_Hw_Os', 'Windows')}:</strong> ${hw.os_name}</div>`;
+    } catch { /* perfil de hardware indisponível: mantém o card oculto */ }
+  }
   const vendorsList = el<HTMLDivElement>('#vendors-list');
   if (vendorsList) {
     vendorsList.innerHTML = vendors.length === 0

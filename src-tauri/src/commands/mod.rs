@@ -248,6 +248,12 @@ pub async fn clear_poe_shader_cache(state: State<'_, AppState>) -> Result<(u64, 
 }
 
 #[tauri::command]
+pub async fn get_hardware_profile(state: State<'_, AppState>) -> Result<crate::services::hardware::HardwareProfile, String> {
+ let executor = ProcessExecutor;
+ crate::services::hardware::HardwareService::new().profile(&executor).await
+}
+
+#[tauri::command]
 pub async fn scan_drivers(state: State<'_, AppState>) -> Result<Vec<crate::services::drivers::DriverInfo>, String> {
  require_auth(&state)?;
  let executor = ProcessExecutor;

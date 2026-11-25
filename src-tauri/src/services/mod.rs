@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod cleaner;
 pub mod drivers;
+pub mod hardware;
 pub mod debloat;
 pub mod games;
 pub mod i18n;

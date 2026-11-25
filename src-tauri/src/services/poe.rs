@@ -60,7 +60,8 @@ impl PoeService {
         use winreg::RegKey;
         if let Ok(key) = RegKey::predef(HKEY_CURRENT_USER).open_subkey(r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders") {
             if let Ok(raw) = key.get_value::<String, _>("Personal") {
-                let expanded = crate::services::registry::expand_env_strings(&raw);
+                // %USERPROFILE%\Documents: expande as variáveis manualmente.
+                let expanded = std::env::var("USERPROFILE").map(|u| raw.replace("%USERPROFILE%", &u)).unwrap_or(raw);
                 let p = PathBuf::from(expanded);
                 if p.exists() { return p; }
             }

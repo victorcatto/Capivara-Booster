@@ -119,7 +119,7 @@ impl GameOptimizerService {
         reg.set_dword(HKLM, games, "Priority", 6)?;
         reg.set_string(HKLM, games, "Scheduling Category", "High")?;
         let exe_dir = Path::new(exe_path).parent().unwrap_or(Path::new(""));
-        let steam_library = exe_dir.and_then(|p| p.ancestors().nth(3)).unwrap_or(Path::new(""));
+        let steam_library = exe_dir.ancestors().nth(3).unwrap_or(Path::new(""));
         Ok(format!(
             "foreach ($p in @('cs2.exe','steam.exe')) {{ Add-MpPreference -ExclusionProcess $p -ErrorAction SilentlyContinue }}; Add-MpPreference -ExclusionPath '{}' -ErrorAction SilentlyContinue; Add-MpPreference -ExclusionPath '{}' -ErrorAction SilentlyContinue",
             ps_quote(&steam_library.join("shadercache").display().to_string()),

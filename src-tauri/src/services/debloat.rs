@@ -26,8 +26,8 @@ impl DebloatService {
             ("mixedreality", "Mixed Reality Portal", "Microsoft.MixedReality.Portal", "VR and Mixed reality background daemon", true),
         ];
         packages.iter().map(|(id, name, pattern, description, selected)| BloatwareItem {
-            id: id.into(), name: name.into(), package_pattern: pattern.into(),
-            description: description.into(), category: "UWP".into(),
+            id: (*id).into(), name: (*name).into(), package_pattern: (*pattern).into(),
+            description: (*description).into(), category: "UWP".into(),
             is_selected: *selected, is_removed: false,
         }).collect()
     }

@@ -29,13 +29,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin gh-pages --depth 1 2>/dev/null || true
-          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
-            git checkout --orphan gh-pages-new FETCH_HEAD
-          else
-            git checkout --orphan gh-pages-new
-          fi
-          git rm -rf . 2>/dev/null || true
-          cp -r docs/site/* .
+          BASE=$(git rev-parse --verify FETCH_HEAD 2>/dev/null || echo "")
+          rm -rf /tmp/gh-pages
+          mkdir -p /tmp/gh-pages
+          cd /tmp/gh-pages
+          git init -b gh-pages
+          if [ -n "$BASE" ]; then git pull "$GITHUB_WORKSPACE" "$BASE" --depth 1 2>/dev/null || true; fi
+          rm -rf ./*
+          cp -r "$GITHUB_WORKSPACE"/docs/site/* .
           git add -A
-          git commit -m "chore(pages): publica landing (${{ github.sha }})"
-          git push origin gh-pages-new:gh-pages --force
+          git commit -m "chore(pages): publica landing (${{ github.sha }})" --allow-empty
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" 2>/dev/null || true
+          git push origin gh-pages --force

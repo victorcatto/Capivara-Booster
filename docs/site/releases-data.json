@@ -5,7 +5,34 @@
     "date": "2026-11-25",
     "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.2.0",
     "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.2.0/CapivaraBooster-Setup.exe",
-    "notes": null
+    "notes": [
+      "## Added",
+      "- Driver Booster: one-click driver updates via Windows Update (WUApiLib) with pnputil backup beforehand, professional status table (Updated / Update available) and a full hardware profile card (exact motherboard model, BIOS, CPU, GPU, RAM, Windows build)",
+      "- Updater popup: discreet bottom-right notification with release notes and a working \"Update now\" button (downloads, verifies SHA-256 and launches the elevated installer); Dismiss remembers the version",
+      "- App version badge in the sidebar now reads the real version at runtime via get_app_version",
+      "- Path of Exile 2: texture quality, engine multithreading and VSync off added to the competitive profile, plus a live boost (high process priority and 0.5 ms timer resolution) when the game is already running",
+      "- Counter-Strike 2: NtSetTimerResolution-based 0.5 ms timer resolution while boosting",
+      "## Changed",
+      "- Console redesigned as an \"Activity\" feed: only important events (OK confirmations, errors, module actions) are shown, capped at 80 lines, with a new pill-style toggle button",
+      "- All PowerShell/CMD scripts run with CREATE_NO_WINDOW: zero console popups",
+      "- requireAdministrator manifest embedded via tauri_build: GameDVR, CS2 IFEO and bcdedit writes no longer fail with access denied",
+      "## Fixed",
+      "- Access denied (os error 5) on GameDVR and CS2 IFEO registry writes",
+      "- Sidebar showing raw i18n keys ([Nav_Poe], [Nav_Drivers], [Nav_LowLatency])",
+      "- HPET card stuck on \"Verificando...\" (bcdedit now queried with proper quoting and a fallback)",
+      "- Driver scan returning empty lists (ConvertTo-Json broke on large WMI output; now CSV)",
+      "- TaskDialogIndirect startup crash by declaring Common Controls v6 in the manifest",
+      "## PT-BR",
+      "- Driver Booster: atualização de driver em 1 clique via Windows Update com backup pnputil antes, tabela profissional de status e card com o hardware completo (placa-mãe exata, BIOS, CPU, GPU, RAM e Windows)",
+      "- Popup de atualização discreto com notas da versão e botão \"Atualizar agora\" funcional (download com SHA-256 e instalador elevado); botão Depois lembra a versão",
+      "- Versão real do app no canto superior esquerdo, lida em tempo de execução",
+      "- Path of Exile 2: qualidade de textura, multithreading da engine e VSync off no perfil competitivo, mais boost ao vivo (prioridade alta e timer de 0,5 ms) com o jogo aberto",
+      "- Counter-Strike 2: resolução de timer de 0,5 ms via NtSetTimerResolution",
+      "- Console redesenhado como feed de \"Atividade\": só eventos importantes, limite de 80 linhas e novo botão pílula",
+      "- Scripts PowerShell/CMD com CREATE_NO_WINDOW: nenhuma janela piscando",
+      "- Fim do \"Acesso negado\" no GameDVR, IFEO do CS2 e bcdedit (manifesto embutido)",
+      "- Fim das chaves cruas no menu, do HPET eterno em \"Verificando...\" e do crash TaskDialogIndirect na abertura"
+    ]
   },
   {
     "tag": "v2.1.3",
@@ -13,6 +40,6 @@
     "date": "2026-11-25",
     "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.1.3",
     "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.1.3/CapivaraBooster-Setup.exe",
-    "notes": null
+    "notes": []
   }
 ]

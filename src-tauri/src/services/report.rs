@@ -4,7 +4,8 @@ use crate::services::process_executor::ProcessExecutor;
 use crate::services::telemetry::{TelemetryService, LiveTelemetry};
 
 /// Relatório Completo: estado atual do PC em um PDF na Área de Trabalho,
-/// com marca Capivara Booster (paleta Cyber Mint / Volt Cyan).
+/// com marca Capivara Booster. PDF 1.4 gerado à mão (texto WinAnsi),
+/// sem dependências externas: zero risco de quebrar com API de crate.
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ReportSection {
@@ -13,6 +14,11 @@ pub struct ReportSection {
 }
 
 pub struct ReportService;
+
+const PAGE_W: f64 = 595.28; // A4 em pontos
+const PAGE_H: f64 = 841.89;
+const MARGIN: f64 = 48.0;
+const LINE_H: f64 = 16.0;
 
 impl ReportService {
     pub fn new() -> Self { Self }
@@ -40,8 +46,7 @@ $cpu = Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperat
 if ($cpu) { $ct = [math]::Round(($cpu.CurrentTemperature / 10) - 273.15, 1); Write-Output "CPU_TEMP=$ct" } else { Write-Output "CPU_TEMP=N/A" }
 $g = Get-CimInstance Win32_VideoController | Select-Object -First 1
 if ($g) { Write-Output ("GPU_DRIV=" + $g.DriverVersion); Write-Output ("GPU_DATE=" + $g.DriverDate) }
-$disk = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { "{0} livre: {1:N0} GB de {2:N0} GB" -f $_.DeviceID, ($_.FreeSpace/1GB), ($_.Size/1GB) }
-$disk
+Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { "DISK={0} livre: {1:N0} GB de {2:N0} GB" -f $_.DeviceID, ($_.FreeSpace/1GB), ($_.Size/1GB) }
 "#,
         ).await;
         let mut temp_lines = Vec::new();
@@ -52,8 +57,8 @@ $disk
                 temp_lines.push(format!("Driver GPU: {}", line.trim_start_matches("GPU_DRIV=")));
             } else if line.starts_with("GPU_DATE=") {
                 temp_lines.push(format!("Data do driver GPU: {}", line.trim_start_matches("GPU_DATE=")));
-            } else if line.contains("livre:") {
-                temp_lines.push(format!("Disco {}", line));
+            } else if let Some(rest) = line.strip_prefix("DISK=") {
+                temp_lines.push(format!("Disco {}", rest));
             }
         }
         if !temp_lines.is_empty() {
@@ -94,37 +99,59 @@ $disk
         std::fs::create_dir_all(&desktop).map_err(|e| e.to_string())?;
         let path = desktop.join(format!("CapivaraBooster-Relatorio-{}.pdf", chrono_stamp()));
 
-        // printpdf 0.7: pages e text builder nativos (sem manipular estruturas internas).
-        let (mut doc, page1, regular) = printpdf::PdfDocument::new(
-            "Capivara Booster - Relatorio Completo do Sistema",
-            printpdf::mm(210.0),
-            printpdf::mm(297.0),
-        );
-        let bold = doc.add_builtin_font(printpdf::BuiltinFont::HelveticaBold).map_err(|e| e.to_string())?;
-        let font_regular = doc.add_builtin_font(printpdf::BuiltinFont::Helvetica).map_err(|e| e.to_string())?;
-        let _ = regular;
+        // Fluxo de conteúdo: cabeçalho da marca, seções e rodapé.
+        let mut ops = String::new();
+        let mut y = PAGE_H - MARGIN;
+        let mut line = |ops: &mut String, x: f64, yy: f64, size: f64, font: char, text: &str| {
+            let safe = text.replace('\\', "\\\\").replace('(', "\\(").replace(')', "\\)");
+            ops.push_str(&format!("BT /{} {} Tf {} {} Td ({}) Tj ET\n", font, size, x, yy, safe));
+        };
 
-        let mut writer = doc.start_page();
-        writer.set_font(&font_regular, 24.0);
-        writer.left(18.0, printpdf::mm(229.0), printpdf::mm(60.0), "CAPIVARA BOOSTER");
-        writer.set_font(&font_regular, 10.0);
-        writer.left(18.0, printpdf::mm(110.0), printpdf::mm(184.0), "Relatorio Completo do Sistema: performance e latencia");
-        let mut y = 265.0;
+        // Faixa de marca: retângulo Cyber Mint escuro + título branco.
+        ops.push_str(&format!("q 0.00 0.90 0.67 rg {} {} 547.28 70 re f Q\n", MARGIN, PAGE_H - 110.0));
+        ops.push_str(&format!("q 0.03 0.07 0.09 rg {} {} 547.28 4 re f Q\n", MARGIN, PAGE_H - 114.0));
+        line(&mut ops, MARGIN + 16.0, PAGE_H - 88.0, 24.0, 'F2', "CAPIVARA BOOSTER");
+        line(&mut ops, MARGIN + 16.0, PAGE_H - 104.0, 10.5, 'F1', "Relatorio Completo do Sistema: performance e latencia");
+        y = PAGE_H - 150.0;
+
         for section in &sections {
-            writer.set_font(&bold, 13.0);
-            writer.left(18.0, printpdf::mm(0.0), printpdf::mm(0.0), &section.title);
-            y -= 10.0;
-            writer.set_font(&font_regular, 10.0);
-            for line in &section.lines {
-                writer.left(18.0, printpdf::mm(0.0), printpdf::mm(0.0), line);
-                y -= 7.0;
+            line(&mut ops, MARGIN, y, 14.0, 'F2', &section.title);
+            y -= LINE_H + 2.0;
+            for l in &section.lines {
+                if y < MARGIN + 40.0 { break; }
+                line(&mut ops, MARGIN + 10.0, y, 10.5, 'F1', l);
+                y -= LINE_H;
             }
-            y -= 4.0;
+            y -= 8.0;
         }
-        writer.set_font(&font_regular, 8.0);
-        writer.left(18.0, printpdf::mm(120.0), printpdf::mm(120.0), "Gerado pelo Capivara Booster (github.com/victorcatto/Capivara-Booster)");
-        let _ = (page1, &mut y);
-        doc.save(&path).map_err(|e| format!("falha ao salvar PDF: {e}"))?;
+
+        line(&mut ops, MARGIN, MARGIN - 16.0, 8.5, 'F1', "Gerado pelo Capivara Booster: github.com/victorcatto/Capivara-Booster");
+
+        let stream = ops;
+        let objects = [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {PAGE_W} {PAGE_H}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>"),
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+            format!("<< /Length {} >>\nstream\n{}\nendstream", stream.len(), stream),
+        ];
+
+        let mut pdf = String::from("%PDF-1.4\n");
+        let mut offsets = Vec::new();
+        for (i, obj) in objects.iter().enumerate() {
+            offsets.push(pdf.len() as u64);
+            pdf.push_str(&format!("{} 0 obj\n{}\nendobj\n", i + 1, obj));
+        }
+        let xref_pos = pdf.len() as u64;
+        pdf.push_str(&format!("xref\n0 {}\n", objects.len() + 1));
+        pdf.push_str("0000000000 65535 f \n");
+        for off in offsets {
+            pdf.push_str(&format!("{:010} 00000 n \n", off));
+        }
+        pdf.push_str(&format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{}\n%%EOF", objects.len() + 1, xref_pos));
+
+        std::fs::write(&path, pdf).map_err(|e| format!("falha ao salvar PDF: {e}"))?;
         Ok(path)
     }
 

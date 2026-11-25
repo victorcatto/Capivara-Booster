@@ -1,5 +1,27 @@
 [
   {
+    "tag": "v2.4.2",
+    "name": "Capivara Booster v2.4.2 (Rust Edition)",
+    "date": "2026-11-25",
+    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.4.2",
+    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.4.2/CapivaraBooster-Setup.exe",
+    "notes": [
+      "## Added",
+      "- Driver source pool with link verification: each vendor now has a pool of official sources in preference order (Intel DSA detect + Download Center 28425, NVIDIA app direct + auto-detect, AMD drivers pages, Realtek downloads). Every link is verified with an HTTP HEAD request (10s timeout) before reaching the user; dead links are skipped automatically and the first working source wins",
+      "- \"Scan cache\" button in the Cache Cleaner: rescans the disk live and refreshes table sizes without losing your selections, with a Scanning state on the button",
+      "## Changed",
+      "- Cleaner measurement engine parallelized (rayon): all 9 disk targets are now measured simultaneously instead of one by one, several times faster rescans",
+      "- New rescan_cleaner command runs off the main thread: the UI no longer freezes while the disk is measured",
+      "## Fixed",
+      "- Driver Booster never opens an unverified page again: if every pool source is down at that moment, the app reports exactly what was tried instead of opening a 404",
+      "## PT-BR",
+      "- Pool de fontes de driver com verificação de link: cada fabricante tem fontes oficiais em ordem de preferência (Intel DSA + Download Center 28425, NVIDIA app direto + auto-detect, páginas da AMD, downloads da Realtek). Todo link é testado com HTTP HEAD (10s) antes de chegar ao usuário; links mortos são pulados e a primeira fonte funcional ganha",
+      "- Botão \"Procurar cache\" na limpeza: re-escaneia o disco ao vivo e atualiza os tamanhos da tabela sem perder suas marcações",
+      "- Motor de medição em paralelo (rayon): os 9 alvos de disco são medidos ao mesmo tempo, re-escanso várias vezes mais rápido",
+      "- Driver Booster nunca mais abre página não verificada: se todas as fontes estiverem fora no momento, o app informa o que foi tentado em vez de abrir um 404"
+    ]
+  },
+  {
     "tag": "v2.4.1",
     "name": "Capivara Booster v2.4.1 (Rust Edition)",
     "date": "2026-11-25",
@@ -19,28 +41,6 @@
       "- Telemetria expandida: 10 tarefas agendadas desativadas (CEIP completo) além do DiagTrack/dmwappushservice e chaves de anúncio",
       "- Fim do popup \"\\\\ não foi possível localizar\" no Driver Booster: o site do fabricante abre via PowerShell Start-Process",
       "- Tabela do Debloat no estilo profissional: chips de resumo, status por linha e botão Restaurar, com preset Recomendados"
-    ]
-  },
-  {
-    "tag": "v2.4.0",
-    "name": "Capivara Booster v2.4.0 (Rust Edition)",
-    "date": "2026-11-25",
-    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.4.0",
-    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.4.0/CapivaraBooster-Setup.exe",
-    "notes": [
-      "## Added",
-      "- Full System Report: new dashboard button collects live telemetry (CPU model, load %, temperature via ACPI sensor, RAM usage, GPU driver and date, per-disk free space, active power plan, timer state, motherboard with exact model, BIOS and Windows build) and generates a branded PDF on the user's real Desktop (registry path, OneDrive-safe)",
-      "- Report PDF generated in pure Rust (PDF 1.4 written by hand, no external crates): Capivara Booster branded header, organized sections and repository footer",
-      "## Changed",
-      "- CI/CD build time: tauri-cli is now cached (was recompiled every run, 3-5 minutes), npm install with node_modules cache, rust-cache covering all crates and the cargo bin directory, release profile with codegen-units 16 and thin LTO (much faster linking)",
-      "## Fixed",
-      "- Release workflow failing on the manifest commit step (local Cargo.toml change blocked the checkout of main)",
-      "- Release workflow failing on npm ci (repository has no package-lock.json)",
-      "## PT-BR",
-      "- Relatório Completo: novo botão no painel coleta telemetria ao vivo (CPU com nome, carga e temperatura via sensor ACPI, RAM, driver e data da GPU, espaço livre por disco, plano de energia, estado dos timers, placa-mãe exata, BIOS e build do Windows) e gera um PDF com a marca Capivara Booster na Área de Trabalho real (caminho via registro, compatível com OneDrive)",
-      "- PDF gerado em Rust puro (PDF 1.4 escrito à mão, sem crates externas): cabeçalho com faixa Cyber Mint, seções organizadas e rodapé com o repositório",
-      "- Tempo de build no CI: tauri-cli agora é cacheado (antes recompilava a cada run, 3 a 5 minutos), npm com cache de node_modules, rust-cache cobrindo todas as crates e o cargo bin, perfil release com codegen-units 16 e LTO thin",
-      "- Fim do erro do workflow de release no commit do manifest e no npm ci"
     ]
   }
 ]

@@ -11,6 +11,8 @@
 
 [English version](README.md)
 
+**[Landing page oficial](https://victorcatto.github.io/Capivara-Booster/)**: versão atual, download direto e as últimas novidades.
+
 </div>
 
 ## O que é o Capivara Booster?

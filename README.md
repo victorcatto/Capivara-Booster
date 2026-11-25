@@ -11,6 +11,8 @@
 
 [Português do Brasil](README.pt-BR.md)
 
+**[Official landing page](https://victorcatto.github.io/Capivara-Booster/)**: live version, direct download, and the latest patch notes.
+
 </div>
 
 ## What is Capivara Booster?

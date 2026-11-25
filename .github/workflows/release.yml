@@ -116,9 +116,34 @@ jobs:
           git checkout -B main origin/main
           git add version.json
           git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) { Write-Host "Manifest unchanged"; exit 0 }
-          git commit -m "chore(release): atualiza version.json para v${{ env.VERSION }}"
-          git push origin main
+          if ($LASTEXITCODE -eq 0) { Write-Host "Manifest unchanged" } else {
+            git commit -m "chore(release): atualiza version.json para v${{ env.VERSION }}"
+            git push origin main
+          }
+
+      - name: Refresh Landing Page Patch Notes
+        shell: pwsh
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          New-Item -ItemType Directory -Force docs/site | Out-Null
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases?per_page=2" -Headers @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}" }
+          $data = $releases | ForEach-Object {
+            [ordered]@{
+              tag = $_.tag_name
+              date = ($_.published_at).ToString("yyyy-MM-dd")
+              url = $_.html_url
+              installer = if ($asset = $_.assets | Where-Object name -eq "CapivaraBooster-Setup.exe") { $asset.browser_download_url } else { $_.html_url }
+              notes = ($_.body -split "`n" | Where-Object { $_.Trim() -ne "" } | Select-Object -First 14)
+            }
+          }
+          $data | ConvertTo-Json -Depth 5 | Set-Content docs/site/releases-data.json -Encoding utf8
+          git add docs/site/releases-data.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host "Landing data unchanged" } else {
+            git commit -m "chore(release): atualiza patch notes da landing para v${{ env.VERSION }}"
+            git push origin main
+          }
 
       - name: Create GitHub Release & Upload Assets
         uses: softprops/action-gh-release@v2

@@ -262,6 +262,18 @@ pub fn get_app_version() -> String {
 }
 
 #[tauri::command]
+pub async fn get_live_telemetry() -> Result<crate::services::telemetry::LiveTelemetry, String> {
+ let executor = ProcessExecutor;
+ crate::services::telemetry::TelemetryService::new().snapshot(&executor).await
+}
+
+#[tauri::command]
+pub async fn purge_standby_list() -> Result<bool, String> {
+ let executor = ProcessExecutor;
+ crate::services::telemetry::TelemetryService::clear_standby(&executor).await
+}
+
+#[tauri::command]
 pub async fn get_hardware_profile(state: State<'_, AppState>) -> Result<crate::services::hardware::HardwareProfile, String> {
  let executor = ProcessExecutor;
  crate::services::hardware::HardwareService::new().profile(&executor).await
@@ -557,7 +569,7 @@ pub async fn check_updates(state: State<'_, AppState>) -> Result<UpdateCheckPayl
 }
 
 #[tauri::command]
-pub async fn apply_update(state: State<'_, AppState>, version: String, installer_url: String, sha256: String) -> Result<bool, String> {
+pub async fn apply_update(state: State<'_, AppState>, version: String, installer_url: String, sha256: String) -> Result<crate::services::update::DownloadOutcome, String> {
  let updater = UpdateService::new();
  let manifest = crate::services::update::VersionManifest {
   version,
@@ -568,9 +580,9 @@ pub async fn apply_update(state: State<'_, AppState>, version: String, installer
   sha256,
   mandatory: false,
  };
- updater.download_and_apply(&manifest).await?;
- log(&state, "[Updater] Instalador baixado e iniciado");
- Ok(true)
+ let outcome = updater.download_and_apply(&manifest).await?;
+ log(&state, &format!("[Updater OK] Download concluído ({:.1} MB) e instalador v{} iniciado", outcome.bytes_downloaded as f64 / 1_048_576.0, version));
+ Ok(outcome)
 }
 
 #[derive(Serialize)]

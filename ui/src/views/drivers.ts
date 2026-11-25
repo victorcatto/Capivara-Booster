@@ -129,8 +129,15 @@ export async function renderDrivers(host: HTMLElement): Promise<void> {
             try {
               const msg = await invoke<string>('update_driver_device', { deviceName: device });
               logCompletion(msg);
-              b.textContent = t('Drivers_Updated_Done', 'Atualizado');
+              const reboot = /reinicie|Reinicie|restart/i.test(msg);
+              b.textContent = reboot ? t('Drivers_Reboot_Needed', 'Reinicie o PC') : t('Drivers_Updated_Done', 'Atualizado');
               b.classList.remove('btn-primary');
+              b.classList.add(reboot ? 'btn-warning' : 'btn-success');
+              const row = b.closest('tr');
+              if (row) {
+                const st = row.querySelector<HTMLSpanElement>('.drv-status');
+                if (st) { st.textContent = t('Drivers_Updated', 'Atualizado'); st.className = 'drv-status drv-ok'; }
+              }
             } catch (err) {
               addLog('❌ ' + String(err));
               b.disabled = false;

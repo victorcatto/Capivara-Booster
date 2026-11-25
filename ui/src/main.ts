@@ -43,9 +43,15 @@ export async function applyPendingUpdate(): Promise<void> {
   const btn = el<HTMLButtonElement>('#btn-apply-update');
   if (btn) { btn.disabled = true; btn.textContent = t('Update_Downloading', 'Baixando atualização...'); }
   try {
-    await invoke('apply_update', { version: pendingUpdate.version, installerUrl: pendingUpdate.installer_url, sha256: pendingUpdate.sha256 });
-    addLog('🚀 ' + t('Update_Running', 'Instalador iniciado: conclua a instalação e o app reabrirá atualizado'));
-    if (btn) btn.textContent = t('Update_Running', 'Instalador iniciado');
+    const outcome = await invoke<{ bytes_downloaded: number; installer_path: string; launched: boolean }>('apply_update', { version: pendingUpdate.version, installerUrl: pendingUpdate.installer_url, sha256: pendingUpdate.sha256 });
+    const mb = (outcome.bytes_downloaded / 1_048_576).toFixed(1);
+    addLog(`🚀 ${t('Update_Completed', 'Atualização concluída com sucesso')} (v${pendingUpdate.version}, ${mb} MB)`);
+    if (btn) {
+      btn.textContent = t('Update_Completed', 'Atualização concluída com sucesso');
+      btn.classList.add('btn-success');
+    }
+    const popup = el<HTMLDivElement>('#update-popup');
+    if (popup) setTimeout(() => popup.remove(), 4000);
   } catch (err) {
     addLog('❌ ' + String(err));
     if (btn) { btn.disabled = false; btn.textContent = t('Update_Install', 'Atualizar agora'); }

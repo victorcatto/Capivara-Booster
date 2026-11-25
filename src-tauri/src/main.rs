@@ -44,6 +44,8 @@ fn main() {
             commands::export_driver_backup,
             commands::update_driver_device,
             commands::get_app_version,
+            commands::get_live_telemetry,
+            commands::purge_standby_list,
             commands::get_auth_state,
             commands::login,
             commands::register,

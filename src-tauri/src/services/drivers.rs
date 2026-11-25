@@ -127,11 +127,16 @@ $installer = $session.CreateUpdateInstaller()
 $installer.Updates = $coll
 $installResult = $installer.Install()
 Write-Output ("RESULT=" + $installResult.ResultCode)
+Write-Output ("REBOOT=" + $installResult.RebootRequired)
 "#);
         let result = executor.execute_powershell(&script).await;
         let out = result.stdout.trim();
-        if out.contains("RESULT=2") { Ok(format!("Driver '{safe_name}' atualizado com sucesso via Windows Update")) }
-        else if out.contains("NO_UPDATE_FOUND") { Err(format!("Windows Update não tem driver mais novo para '{safe_name}'")) }
+        let reboot = out.contains("REBOOT=True") || out.contains("REBOOT=1");
+        if out.contains("RESULT=2") && reboot {
+            Ok(format!("Driver '{safe_name}' atualizado com sucesso. Reinicie o PC para concluir."))
+        } else if out.contains("RESULT=2") {
+            Ok(format!("Driver '{safe_name}' atualizado com sucesso via Windows Update"))
+        } else if out.contains("NO_UPDATE_FOUND") { Err(format!("Windows Update não tem driver mais novo para '{safe_name}'")) }
         else if out.contains("RESULT=3") { Err(format!("Instalação do driver '{safe_name}' falhou (código 3: succeeded with errors)")) }
         else if out.contains("RESULT=4") || out.contains("RESULT=5") { Err(format!("Instalação do driver '{safe_name}' falhou; reinicie o PC e tente de novo")) }
         else { Err(format!("Windows Update não respondeu para '{safe_name}': {}", result.stderr)) }

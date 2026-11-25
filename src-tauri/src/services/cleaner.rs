@@ -42,6 +42,17 @@ pub fn directories_for(item_id: &str) -> Vec<PathBuf> {
     }
 }
 
+fn single_targets(item_id: &str) -> Vec<PathBuf> {
+    let windir = std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into());
+    match item_id {
+        "temp" => vec![std::env::temp_dir()],
+        "system_temp" => vec![PathBuf::from(&windir).join("Temp")],
+        "prefetch" => vec![PathBuf::from(&windir).join("Prefetch")],
+        "windows_update" => vec![PathBuf::from(&windir).join(r"SoftwareDistribution\Download")],
+        _ => vec![],
+    }
+}
+
 impl CleanerService {
     pub fn new() -> Self { Self }
 
@@ -69,15 +80,7 @@ impl CleanerService {
     /// Tamanho somado das pastas do alvo (agregações inclusas).
     pub fn measure(item_id: &str) -> (u64, u32, u32) {
         let mut targets: Vec<PathBuf> = directories_for(item_id);
-        if targets.is_empty() {
-            match item_id {
-                "temp" => targets.push(std::env::temp_dir()),
-                "system_temp" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join("Temp")),
-                "prefetch" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join("Prefetch")),
-                "windows_update" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join(r"SoftwareDistribution\Download")),
-                _ => return (0, 0, 0),
-            }
-        }
+        if targets.is_empty() { targets = single_targets(item_id); }
         let mut bytes = 0; let mut count = 0; let mut errors = 0;
         for target in targets { measure_recursive(&target, &mut bytes, &mut count, &mut errors); }
         (bytes, count, errors)
@@ -85,15 +88,7 @@ impl CleanerService {
 
     pub fn clean_item(&self, item_id: &str) -> Result<(u64, u32, u32), String> {
         let mut targets: Vec<PathBuf> = directories_for(item_id);
-        if targets.is_empty() {
-            match item_id {
-                "temp" => targets.push(std::env::temp_dir()),
-                "system_temp" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join("Temp")),
-                "prefetch" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join("Prefetch")),
-                "windows_update" => targets.push(PathBuf::from(std::env::var("WINDIR").unwrap_or_else(|_| r"C:\Windows".into())).join(r"SoftwareDistribution\Download")),
-                _ => return Ok((0, 0, 0)),
-            }
-        }
+        if targets.is_empty() { targets = single_targets(item_id); }
         let mut bytes = 0; let mut count = 0; let mut errors = 0;
         for target in targets {
             if target.exists() { self.clean_recursive(&target, &mut bytes, &mut count, &mut errors)?; }
@@ -110,7 +105,11 @@ impl CleanerService {
             let path = entry.path();
             if path.is_file() {
                 match std::fs::metadata(&path) {
-                    Ok(meta) => { *bytes += meta.len(); if std::fs::remove_file(&path).is_ok() { *count += 1; } else { *errors += 1; } }
+                    Ok(meta) => {
+                        *bytes += meta.len();
+                        // Arquivo em uso: pula sem falhar o lote (erro conta como skipped).
+                        if std::fs::remove_file(&path).is_ok() { *count += 1; } else { *errors += 1; }
+                    }
                     Err(_) => *errors += 1,
                 }
             } else if path.is_dir() {
@@ -119,6 +118,18 @@ impl CleanerService {
             }
         }
         Ok(())
+    }
+}
+
+fn measure_recursive(dir: &PathBuf, bytes: &mut u64, count: &mut u32, errors: &mut u32) {
+    let entries = match std::fs::read_dir(dir) { Ok(e) => e, Err(_) => { *errors += 1; return; } };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() {
+            if let Ok(meta) = std::fs::metadata(&path) { *bytes += meta.len(); *count += 1; } else { *errors += 1; }
+        } else if path.is_dir() {
+            measure_recursive(&path, bytes, count, errors);
+        }
     }
 }
 

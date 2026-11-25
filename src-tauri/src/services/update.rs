@@ -24,6 +24,13 @@ pub struct VersionManifest {
 
 pub struct UpdateService;
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DownloadOutcome {
+    pub bytes_downloaded: u64,
+    pub installer_path: String,
+    pub launched: bool,
+}
+
 impl UpdateService {
     pub fn new() -> Self { Self }
 
@@ -38,7 +45,7 @@ impl UpdateService {
         if parse_semver(&manifest.version) > parse_semver(current_version) { Ok(Some(manifest)) } else { Ok(None) }
     }
 
-    pub async fn download_and_apply(&self, manifest: &VersionManifest) -> Result<(), String> {
+    pub async fn download_and_apply(&self, manifest: &VersionManifest) -> Result<DownloadOutcome, String> {
         if manifest.installer_url.is_empty() { return Err("URL do instalador ausente no manifesto".into()); }
         let client = reqwest::Client::builder().user_agent("CapivaraBooster-Rust/2.0").build().map_err(|e| e.to_string())?;
         let response = client.get(&manifest.installer_url).send().await.map_err(|e| e.to_string())?;
@@ -53,21 +60,20 @@ impl UpdateService {
         let mut file = tokio::fs::File::create(&path).await.map_err(|e| e.to_string())?;
         file.write_all(&bytes).await.map_err(|e| e.to_string())?;
         file.flush().await.map_err(|e| e.to_string())?;
-        launch_elevated(&path)?;
-        Ok(())
+        let launched = launch_elevated(&path)?;
+        Ok(DownloadOutcome { bytes_downloaded: bytes.len() as u64, installer_path: path.display().to_string(), launched })
     }
 }
 
 #[cfg(windows)]
-fn launch_elevated(path: &PathBuf) -> Result<(), String> {
+fn launch_elevated(path: &PathBuf) -> Result<bool, String> {
     std::process::Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", &format!("Start-Process -FilePath '{}' -Verb RunAs -ArgumentList '/SILENT','/CLOSEAPPLICATIONS','/RESTARTAPPLICATIONS'", ps_quote(&path.display().to_string()))])
-        .spawn().map_err(|e| e.to_string())?;
-    Ok(())
+        .spawn().map(|_| true).map_err(|e| e.to_string())
 }
 
 #[cfg(not(windows))]
-fn launch_elevated(_path: &PathBuf) -> Result<(), String> { Err("atualização automática só é suportada no Windows".into()) }
+fn launch_elevated(_path: &PathBuf) -> Result<bool, String> { Err("atualização automática só é suportada no Windows".into()) }
 
 fn ps_quote(value: &str) -> String { value.replace('\'', "''") }
 fn hex(bytes: &[u8]) -> String { bytes.iter().map(|b| format!("{b:02x}")).collect() }

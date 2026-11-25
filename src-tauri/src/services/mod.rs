@@ -11,4 +11,5 @@ pub mod process_executor;
 pub mod registry;
 pub mod restore;
 pub mod system_boost;
+pub mod telemetry;
 pub mod update;

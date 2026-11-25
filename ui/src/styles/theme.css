@@ -88,6 +88,19 @@ body { background: var(--bg); color: var(--text-primary); font-family: "Segoe UI
 }
 .status-card strong { display: block; margin-top: 8px; font-size: 14px; }
 .status-card small { display: block; margin-top: 4px; color: var(--text-secondary); }
+
+/* Mini barra de uso de RAM no dashboard */
+.mini-bar { margin-top: 10px; height: 6px; border-radius: 3px; background: #22283A; overflow: hidden; }
+.mini-bar > div { height: 100%; width: 0; background: var(--gradient); border-radius: 3px; transition: width 0.4s ease; }
+.btn-success { background: var(--success) !important; color: #06130A !important; }
+.btn-warning { background: var(--warning) !important; color: #1A1204 !important; }
+
+/* Cleaner: hero com estatísticas */
+.cleaner-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 22px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 24px; }
+.cleaner-hero-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+.cleaner-stat span { display: block; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; margin-bottom: 4px; }
+.cleaner-stat strong { font-size: 24px; font-weight: 700; }
+.cleaner-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .hero { border: 1px solid var(--accent-cyan); background: var(--card); padding: 24px; margin-bottom: 24px; }
 .hero h2 { color: var(--accent-cyan); font-size: 18px; margin-bottom: 8px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }

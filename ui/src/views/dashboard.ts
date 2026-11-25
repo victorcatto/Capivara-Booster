@@ -3,19 +3,27 @@ import { t } from '../i18n';
 import { addLog, logCompletion, el } from '../shell';
 
 interface GameDetection { game_id: string; found: boolean; executable_path: string; }
+interface LiveTelemetry {
+  cpu_name: string; cpu_load_percent: number;
+  ram_total_gb: number; ram_used_gb: number;
+  gpu_name: string; power_plan: string; uptime_hours: number;
+}
 
 export async function renderDashboard(host: HTMLElement): Promise<void> {
   host.innerHTML = `
     <h1>${t('Dashboard_Title', 'Visão Geral do Sistema')}</h1>
-    <p class="subtitle">${t('Dashboard_Subtitle', 'Diagnósticos de timers de hardware e aceleração do sistema.')}</p>
-
-    <div id="update-banner"></div>
+    <p class="subtitle">${t('Dashboard_Subtitle', 'Telemetria ao vivo do hardware e aceleração do sistema em um clique.')}</p>
 
     <div class="status-grid">
-      <div class="status-card"><h4>${t('Dashboard_OsCard_Title', 'Sistema')}</h4><strong id="os-info">Windows 10/11 (64-bit)</strong><small style="color:var(--accent-cyan);">${t('Dashboard_OsCard_Target', 'Alvo: Windows 10/11')}</small></div>
-      <div class="status-card"><h4>${t('Dashboard_HpetCard_Title', 'HPET')}</h4><strong id="hpet-status" class="text-muted">${t('Checking', 'Verificando...')}</strong><small>${t('Dashboard_HpetCard_Desc', 'Latência DPC')}</small></div>
-      <div class="status-card"><h4>${t('Dashboard_PowerCard_Title', 'Plano de Energia')}</h4><strong class="text-success">Ultimate Performance</strong><small>${t('Dashboard_PowerCard_Desc', 'Clock travado')}</small></div>
-      <div class="status-card"><h4>${t('Dashboard_GamesCard_Title', 'Esports Suite')}</h4><strong id="games-summary">${t('Checking', 'Verificando...')}</strong><small>CS2 / Valorant / LoL / PoE</small></div>
+      <div class="status-card"><h4>${t('Dash_Cpu', 'Processador')}</h4><strong id="tm-cpu" class="text-muted">—</strong><small id="tm-cpu-load">—</small></div>
+      <div class="status-card"><h4>${t('Dash_Ram', 'Memória')}</h4><strong id="tm-ram" class="text-muted">—</strong><div class="mini-bar"><div id="tm-ram-bar"></div></div><small id="tm-ram-pct">—</small></div>
+      <div class="status-card"><h4>${t('Dash_Gpu', 'Placa de Vídeo')}</h4><strong id="tm-gpu" class="text-muted">—</strong><small id="tm-uptime">—</small></div>
+      <div class="status-card"><h4>${t('Dash_Power', 'Plano de Energia')}</h4><strong id="tm-plan" class="text-muted">—</strong><small id="hpet-status">—</small></div>
+    </div>
+
+    <div class="status-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+      <div class="status-card"><h4>${t('Dash_Latency_Badge', 'Latência')}</h4><strong id="latency-badge" class="text-muted">—</strong><small>HPET / Dynamic Tick</small></div>
+      <div class="status-card"><h4>${t('Dash_Games_Card', 'Esports Suite')}</h4><strong id="games-summary">—</strong><small>CS2 / Valorant / LoL / PoE</small></div>
     </div>
 
     <div class="hero">
@@ -24,7 +32,8 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
       <div class="progress"><div class="progress-bar" id="boost-progress"></div></div>
       <div class="actions">
         <button class="btn btn-primary" id="btn-quick-boost">${t('Dashboard_QuickBoost_Button', 'Executar Master Boost')}</button>
-        <button class="btn btn-secondary" id="btn-refresh">${t('Dashboard_Refresh_Button', 'Atualizar Diagnósticos')}</button>
+        <button class="btn btn-secondary" id="btn-standby">${t('Dash_Purge_Standby', 'Liberar RAM (Standby)')}</button>
+        <button class="btn btn-secondary" id="btn-refresh">${t('Dashboard_Refresh_Button', 'Atualizar')}</button>
       </div>
     </div>
 
@@ -38,15 +47,37 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
     </div>`;
 
   const refresh = async () => {
+    // Telemetria ao vivo: uma consulta só, sem travar a UI.
+    try {
+      const tm = await invoke<LiveTelemetry>('get_live_telemetry');
+      const set = (id: string, v: string) => { const n = el<HTMLElement>(id); if (n) n.textContent = v; };
+      set('#tm-cpu', tm.cpu_name || '—');
+      set('#tm-cpu-load', t('Dash_Cpu_Load', 'Carga atual') + `: ${tm.cpu_load_percent}%`);
+      set('#tm-ram', `${tm.ram_used_gb.toFixed(1)} / ${tm.ram_total_gb.toFixed(1)} GB`);
+      const pct = tm.ram_total_gb > 0 ? Math.round((tm.ram_used_gb / tm.ram_total_gb) * 100) : 0;
+      const bar = el<HTMLDivElement>('#tm-ram-bar');
+      if (bar) bar.style.width = `${Math.min(pct, 100)}%`;
+      set('#tm-ram-pct', `${pct}% ${t('Dash_Ram_Used', 'em uso')}`);
+      set('#tm-gpu', tm.gpu_name || '—');
+      set('#tm-uptime', t('Dash_Uptime', 'Ligado há') + ` ${tm.uptime_hours}h`);
+      set('#tm-plan', tm.power_plan || '—');
+    } catch { /* telemetria falhou: cards ficam com — */ }
+
     const hpetStatus = el<HTMLSpanElement>('#hpet-status');
     if (hpetStatus) {
       try {
         const disabled = await invoke<boolean>('get_hpet_status');
-        hpetStatus.textContent = disabled ? 'Disabled' : 'Enabled';
+        hpetStatus.textContent = disabled ? 'HPET: Dynamic Tick ON' : 'HPET: padrão';
         hpetStatus.className = disabled ? 'text-success' : '';
-      } catch {
-        hpetStatus.textContent = 'N/A';
-      }
+      } catch { hpetStatus.textContent = 'HPET: N/A'; }
+    }
+    const latBadge = el<HTMLSpanElement>('#latency-badge');
+    if (latBadge) {
+      try {
+        const disabled = await invoke<boolean>('get_hpet_status');
+        latBadge.textContent = disabled ? t('Dash_Latency_Optimized', 'Otimizada') : t('Dash_Latency_Default', 'Padrão do Windows');
+        latBadge.className = disabled ? 'text-success' : 'text-muted';
+      } catch { latBadge.textContent = '—'; }
     }
 
     const games = ['cs2', 'valorant', 'lol'];
@@ -63,6 +94,17 @@ export async function renderDashboard(host: HTMLElement): Promise<void> {
   refresh().catch(() => {});
 
   el<HTMLButtonElement>('#btn-refresh')?.addEventListener('click', () => refresh().catch(() => {}));
+
+  el<HTMLButtonElement>('#btn-standby')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    try {
+      await invoke('purge_standby_list');
+      logCompletion(t('Dash_Standby_Done', 'RAM em cache liberada'));
+      await refresh();
+    } catch (err) { addLog('❌ ' + String(err)); }
+    finally { btn.disabled = false; }
+  });
 
   el<HTMLButtonElement>('#btn-quick-boost')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget as HTMLButtonElement;

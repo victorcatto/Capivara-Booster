@@ -154,10 +154,45 @@ jobs:
               notes = ($_.body -split "`n" | Where-Object { $_.Trim() -ne "" } | Select-Object -First 60)
             }
           }
-          $data | ConvertTo-Json -Depth 5 | Set-Content docs/site/releases-data.json -Encoding utf8
-          git add docs/site/releases-data.json
+          # Sem BOM: o PowerShell 5.1 grava EF BB BF e o JSON quebra.
+          [IO.File]::WriteAllText("$PWD/docs/site/releases-data.json", ($data | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+
+      - name: Sync READMEs And Repo Homepage
+        shell: pwsh
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          $version = "${{ env.VERSION }}"
+          $directUrl = "https://github.com/${{ github.repository }}/releases/latest/download/CapivaraBooster-Setup.exe"
+          $date = (Get-Date).ToString("yyyy-MM-dd")
+          foreach ($readme in @("README.md", "README.pt-BR.md")) {
+            if (Test-Path $readme) {
+              $content = [IO.File]::ReadAllText("$PWD/$readme")
+              $content = $content -replace 'CapivaraBooster-Setup-v[\d\.]+\.exe', 'CapivaraBooster-Setup.exe'
+              $content = $content -replace '(?m)^(.*vers[ãa]o.*?v)\d+\.\d+\.\d+', "`$1$version"
+              [IO.File]::WriteAllText("$PWD/$readme", $content, (New-Object System.Text.UTF8Encoding($false)))
+            }
+          }
+          # Badge dinâmico de versão no README principal (se existir o marcador)
+          if (Test-Path README.md) {
+            $c = [IO.File]::ReadAllText("$PWD/README.md")
+            $c = $c -replace 'version-v\d+\.\d+\.\d+', "version-v$version"
+            [IO.File]::WriteAllText("$PWD/README.md", $c, (New-Object System.Text.UTF8Encoding($false)))
+          }
+
+      - name: Update Repo Homepage
+        shell: bash
+        run: |
+          gh repo edit ${{ github.repository }} --homepage "https://victorcatto.github.io/Capivara-Booster/" || echo "homepage update skipped"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit Release Sync
+        shell: pwsh
+        run: |
+          git add docs/site/releases-data.json README.md README.pt-BR.md 2>$null
           git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) { Write-Host "Landing data unchanged" } else {
-            git commit -m "chore(release): atualiza patch notes da landing para v${{ env.VERSION }}"
+          if ($LASTEXITCODE -eq 0) { Write-Host "Release sync unchanged" } else {
+            git commit -m "chore(release): sincroniza landing, READMEs e homepage para v${{ env.VERSION }}"
             git push origin main
           }

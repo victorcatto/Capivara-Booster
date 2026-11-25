@@ -110,14 +110,15 @@ jobs:
       - name: Commit Updated Manifest Back To Default Branch
         shell: pwsh
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") { $branch = "${{ github.ref_name }}" }
-          else { $branch = (git branch -r --contains HEAD | Select-String -Pattern 'origin/(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1) }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
           git add version.json
-          if (git diff --cached --quiet) { Write-Host "Manifest unchanged"; exit 0 }
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host "Manifest unchanged"; exit 0 }
           git commit -m "chore(release): atualiza version.json para v${{ env.VERSION }}"
-          git push origin "HEAD:$branch"
+          git push origin main
 
       - name: Create GitHub Release & Upload Assets
         uses: softprops/action-gh-release@v2

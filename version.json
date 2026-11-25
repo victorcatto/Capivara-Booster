@@ -1,9 +1,9 @@
 {
-  "version": "1.1.4",
-  "releaseDate": "2026-11-24",
+  "version": "2.0.0",
+  "releaseDate": "2026-11-25",
   "title": "Capivara Booster v1.1.4 - Updater Hotfix & Console Toggle",
   "changelog": "[EN-US]\n- Fixed auto-updater 404: release manifest now points to a valid published installer\n- Restored MainWindow XAML to the compiling v1.1.2 layout (sidebar, auth modal, update banner intact)\n- Live Execution Console now hidden by default with a localized Show/Hide Console toggle in the header\n- Regenerated app.ico as a true multi-resolution ICO (16-256px, PNG-compressed 256 frame)\n\n[PT-BR]\n- Corrigido 404 do auto-atualizador: o manifest agora aponta para um instalador publicado válido\n- Restaurado o MainWindow XAML para o layout do v1.1.2 que compilava (sidebar, modal de auth e banner de update preservados)\n- Console de Execução agora oculto por padrão, com botão Mostrar/Ocultar Console localizado no cabeçalho\n- app.ico regenerado como ICO multi-resolução real (16-256px, frame 256 em PNG)",
-  "installerUrl": "https://github.com/victorcatto/Capivara-Booster/releases/download/v1.1.4/CapivaraBooster-Setup-v1.1.4.exe",
-  "sha256": "",
+  "installerUrl": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.0.0/CapivaraBooster-Setup-v2.0.0.exe",
+  "sha256": "52308577C38A705247741B79778D41AF7D546ADC5A11863CAE86CE107F404556",
   "mandatory": false
 }

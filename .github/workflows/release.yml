@@ -122,13 +122,28 @@ jobs:
             git push origin main
           }
 
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: "Capivara Booster v${{ env.VERSION }} (Rust Edition)"
+          draft: false
+          prerelease: false
+          body_path: release-notes.md
+          files: |
+            ${{ env.INSTALLER_PATH }}
+            ${{ env.DIRECT_INSTALLER_PATH }}
+            version.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Refresh Landing Page Patch Notes
         shell: pwsh
         run: |
           git fetch origin main
           git checkout -B main origin/main
           New-Item -ItemType Directory -Force docs/site | Out-Null
-          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases?per_page=2" -Headers @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}" }
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases?per_page=2" -Headers @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}" } -Headers @{ "Cache-Control" = "no-cache" }
           $data = $releases | ForEach-Object {
             [ordered]@{
               tag = $_.tag_name
@@ -146,18 +161,3 @@ jobs:
             git commit -m "chore(release): atualiza patch notes da landing para v${{ env.VERSION }}"
             git push origin main
           }
-
-      - name: Create GitHub Release & Upload Assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ env.VERSION }}
-          name: "Capivara Booster v${{ env.VERSION }} (Rust Edition)"
-          draft: false
-          prerelease: false
-          body_path: release-notes.md
-          files: |
-            ${{ env.INSTALLER_PATH }}
-            ${{ env.DIRECT_INSTALLER_PATH }}
-            version.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

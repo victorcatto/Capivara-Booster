@@ -34,6 +34,8 @@ jobs:
           mkdir -p /tmp/gh-pages
           cd /tmp/gh-pages
           git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ -n "$BASE" ]; then git pull "$GITHUB_WORKSPACE" "$BASE" --depth 1 2>/dev/null || true; fi
           rm -rf ./*
           cp -r "$GITHUB_WORKSPACE"/docs/site/* .

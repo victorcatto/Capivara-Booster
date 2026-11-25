@@ -1,5 +1,13 @@
 [
   {
+    "tag": "v2.3.0",
+    "name": "Capivara Booster v2.3.0 (Rust Edition)",
+    "date": "2026-11-25",
+    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.3.0",
+    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.3.0/CapivaraBooster-Setup.exe",
+    "notes": null
+  },
+  {
     "tag": "v2.2.0",
     "name": "Capivara Booster v2.2.0 (Rust Edition)",
     "date": "2026-11-25",
@@ -33,13 +41,5 @@
       "- Fim do \"Acesso negado\" no GameDVR, IFEO do CS2 e bcdedit (manifesto embutido)",
       "- Fim das chaves cruas no menu, do HPET eterno em \"Verificando...\" e do crash TaskDialogIndirect na abertura"
     ]
-  },
-  {
-    "tag": "v2.1.3",
-    "name": "Capivara Booster v2.1.3 (Rust Edition)",
-    "date": "2026-11-25",
-    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.1.3",
-    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.1.3/CapivaraBooster-Setup.exe",
-    "notes": []
   }
 ]

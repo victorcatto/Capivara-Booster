@@ -26,7 +26,7 @@ impl ReportService {
     pub async fn collect(&self, executor: &ProcessExecutor) -> Result<Vec<ReportSection>, String> {
         let mut sections = Vec::new();
 
-        let telemetry: LiveTelemetry = TelemetryService::new().snapshot(executor).unwrap_or(LiveTelemetry {
+        let telemetry: LiveTelemetry = TelemetryService::new().snapshot(executor).await.unwrap_or(LiveTelemetry {
             cpu_name: "N/A".into(), cpu_load_percent: 0, ram_total_gb: 0.0, ram_used_gb: 0.0,
             gpu_name: "N/A".into(), power_plan: "N/A".into(), uptime_hours: 0,
         });
@@ -128,12 +128,12 @@ Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { "DISK
         write_line(&mut ops, MARGIN, MARGIN - 16.0, 8.5, "F1", "Gerado pelo Capivara Booster: github.com/victorcatto/Capivara-Booster");
 
         let stream = ops;
-        let objects = [
-            "<< /Type /Catalog /Pages 2 0 R >>",
-            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        let objects: Vec<String> = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
             format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {PAGE_W} {PAGE_H}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>"),
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>".to_string(),
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>".to_string(),
             format!("<< /Length {} >>\nstream\n{}\nendstream", stream.len(), stream),
         ];
 

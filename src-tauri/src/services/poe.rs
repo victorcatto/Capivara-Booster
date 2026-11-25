@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use crate::services::process_executor::ProcessExecutor;
 use crate::services::registry::{HKCU, HKLM, RegistryService};

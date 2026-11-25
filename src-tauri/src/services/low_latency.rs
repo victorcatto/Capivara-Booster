@@ -71,7 +71,7 @@ impl LowLatencyService {
     }
 
     /// Aplica o tweak escolhido. Todos são rastreados para rollback.
-    pub fn apply_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+    pub async fn apply_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
         match tweak_id {
             "dynamic_tick" => { executor.execute_cmd("bcdedit /set disabledynamictick yes").await; Ok(true) }
             "synthetic_timer" => { executor.execute_cmd("bcdedit /set useplatformtick yes").await; Ok(true) }
@@ -101,7 +101,7 @@ impl LowLatencyService {
     }
 
     /// Reverte um tweak ao padrão do Windows.
-    pub fn revert_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
+    pub async fn revert_tweak(reg: &mut RegistryService, executor: &ProcessExecutor, tweak_id: &str) -> Result<bool, String> {
         match tweak_id {
             "dynamic_tick" => { executor.execute_cmd("bcdedit /deletevalue disabledynamictick").await; Ok(true) }
             "synthetic_timer" => { executor.execute_cmd("bcdedit /deletevalue useplatformtick").await; Ok(true) }

@@ -1,5 +1,13 @@
 [
   {
+    "tag": "v2.4.3",
+    "name": "Capivara Booster v2.4.3 (Rust Edition)",
+    "date": "2026-11-26",
+    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.4.3",
+    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.4.3/CapivaraBooster-Setup.exe",
+    "notes": null
+  },
+  {
     "tag": "v2.4.2",
     "name": "Capivara Booster v2.4.2 (Rust Edition)",
     "date": "2026-11-25",
@@ -19,28 +27,6 @@
       "- Botão \"Procurar cache\" na limpeza: re-escaneia o disco ao vivo e atualiza os tamanhos da tabela sem perder suas marcações",
       "- Motor de medição em paralelo (rayon): os 9 alvos de disco são medidos ao mesmo tempo, re-escanso várias vezes mais rápido",
       "- Driver Booster nunca mais abre página não verificada: se todas as fontes estiverem fora no momento, o app informa o que foi tentado em vez de abrir um 404"
-    ]
-  },
-  {
-    "tag": "v2.4.1",
-    "name": "Capivara Booster v2.4.1 (Rust Edition)",
-    "date": "2026-11-25",
-    "url": "https://github.com/victorcatto/Capivara-Booster/releases/tag/v2.4.1",
-    "installer": "https://github.com/victorcatto/Capivara-Booster/releases/download/v2.4.1/CapivaraBooster-Setup.exe",
-    "notes": [
-      "## Added",
-      "- Debloater with real Windows state: the screen queries Get-AppxPackage on load and marks each package as Installed or Removed for real; removed packages get a Restore action that re-registers the app via Add-AppxPackage",
-      "- 10 new UWP packages: Copilot, Clipchamp, OneNote UWP, Camera, Alarms, Snip & Sketch, Sound Recorder plus the preinstalled Spotify, Disney+ and TikTok wrappers (25 total)",
-      "- Expanded telemetry switch: 10 scheduled tasks disabled (full CEIP: Consolidator, UsbCeip, KernelCeipTask, Uploader, Compatibility Appraiser, ProgramDataUpdater, StartupAppTask, Autochk Proxy, CloudExperienceHost, Feedback/DmClient) on top of DiagTrack/dmwappushservice and ad keys",
-      "## Fixed",
-      "- Driver Booster opening vendor sites: cmd start misinterpreted URLs containing & and Windows showed a \"\\\\ not found\" network path error; the browser now opens via PowerShell Start-Process",
-      "- Debloat table rebuilt in the professional style: summary chips (present/removed/total), per-row status and Restore button, Recommended preset",
-      "## PT-BR",
-      "- Debloater com estado real do Windows: a tela consulta Get-AppxPackage ao carregar e marca cada pacote como Instalado ou Removido de verdade; pacotes removidos ganham botão Restaurar que re-registra o app",
-      "- 10 pacotes novos: Copilot, Clipchamp, OneNote UWP, Camera, Alarmes, Snip & Sketch, Gravador de Voz e os wrappers pré-instalados Spotify, Disney+ e TikTok (25 no total)",
-      "- Telemetria expandida: 10 tarefas agendadas desativadas (CEIP completo) além do DiagTrack/dmwappushservice e chaves de anúncio",
-      "- Fim do popup \"\\\\ não foi possível localizar\" no Driver Booster: o site do fabricante abre via PowerShell Start-Process",
-      "- Tabela do Debloat no estilo profissional: chips de resumo, status por linha e botão Restaurar, com preset Recomendados"
     ]
   }
 ]
